@@ -304,7 +304,7 @@
 							background: #fff;
 							border-radius: 30rpx;
 							padding: 40rpx;
-							margin-top: 80rpx;// 距离外壳的距离
+							margin-top: 80rpx;// 距离外壳的高度
 					
 							.title {
 								font-size: 46rpx;

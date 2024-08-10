@@ -170,7 +170,7 @@
   background: #fff;
   border-radius: 30rpx;
   padding: 40rpx;
-  margin-top: 80rpx;
+  margin-top: 200rpx;
 }
 .homeLayout .body .swiperOut swiper .ad .message .title {
   font-size: 46rpx;
@@ -210,4 +210,23 @@
   height: 100%;
   width: 50%;
   background: linear-gradient(to right, #fdd4f1, #74dbef);
+}
+.usePopup {
+  padding-top: 15vh;
+}
+.usePopup image {
+  height: 150rpx;
+  transform: translateY(100rpx);
+  opacity: 0;
+  animation: useAnimate 1.5s infinite;
+}
+@keyframes useAnimate {
+0% {
+    transform: translateY(100rpx);
+    opacity: 0;
+}
+100% {
+    transform: translateY(-100rpx);
+    opacity: 1;
+}
 }

@@ -269,51 +269,25 @@ CREATE POLICY "search_history_delete_own" ON search_history FOR DELETE USING (au
 
 
 -- =============================================
--- Storage 存储桶（图片上传）
+-- Storage 存储桶（须通过 Dashboard UI 操作）
 -- =============================================
+-- storage.objects 表归 supabase_admin 所有，SQL Editor 无权 ALTER
+-- 请手动在 Dashboard 中操作：
+--
+-- 1. 创建存储桶：
+--    Dashboard → Storage → New bucket
+--    - 名称: posts  |  Public: ✅
+--    - 名称: avatars |  Public: ✅
+--
+-- 2. 设置 posts 桶策略：
+--    Dashboard → Storage → posts → Policies
+--    - SELECT: 允许所有人 (bucket_id = 'posts')
+--    - INSERT: 允许登录用户，限制目录为 auth.uid()
+--    - DELETE: 允许登录用户，限制目录为 auth.uid()
+--
+-- 3. 设置 avatars 桶策略：
+--    Dashboard → Storage → avatars → Policies
+--    - SELECT: 允许所有人 (bucket_id = 'avatars')
+--    - INSERT: 允许登录用户
+--    - UPDATE: 允许登录用户
 
--- 创建 posts 存储桶（公开读取）
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('posts', 'posts', true)
-ON CONFLICT (id) DO NOTHING;
-
--- 创建 avatars 存储桶（公开读取）
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('avatars', 'avatars', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Storage RLS 策略
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
--- posts 桶：所有人可读，登录用户可上传自己的目录
-CREATE POLICY "posts_storage_select" ON storage.objects
-  FOR SELECT USING (bucket_id = 'posts');
-
-CREATE POLICY "posts_storage_insert" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'posts'
-    AND auth.uid() IS NOT NULL
-    AND (storage.foldername(name))[1] = auth.uid()::TEXT
-  );
-
-CREATE POLICY "posts_storage_delete" ON storage.objects
-  FOR DELETE USING (
-    bucket_id = 'posts'
-    AND auth.uid()::TEXT = (storage.foldername(name))[1]
-  );
-
--- avatars 桶：所有人可读，登录用户可上传
-CREATE POLICY "avatars_storage_select" ON storage.objects
-  FOR SELECT USING (bucket_id = 'avatars');
-
-CREATE POLICY "avatars_storage_insert" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'avatars'
-    AND auth.uid() IS NOT NULL
-  );
-
-CREATE POLICY "avatars_storage_update" ON storage.objects
-  FOR UPDATE USING (
-    bucket_id = 'avatars'
-    AND auth.uid() IS NOT NULL
-  );

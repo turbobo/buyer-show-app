@@ -1,21 +1,49 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '@/store/ui'
 import { useUserStore } from '@/store/user'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@/types'
 
 export default function LoginSheet() {
   const { loginSheet, closeLoginSheet } = useUIStore((s) => ({
     loginSheet: s.loginSheet,
     closeLoginSheet: s.closeLoginSheet,
   }))
-  const loginMock = useUserStore((s) => s.loginMock)
+  const setUser = useUserStore((s) => s.setUser)
+  const [loading, setLoading] = useState(false)
 
-  const handleLogin = () => {
-    loginMock()
-    closeLoginSheet()
-    // Execute callback after login
-    loginSheet.onLogin?.()
+  const handleLogin = async () => {
+    setLoading(true)
+    try {
+      // Supabase 匿名登录
+      const { data, error } = await supabase.auth.signInAnonymously()
+      if (error) throw error
+
+      // 获取用户资料
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single()
+
+        if (profile) {
+          setUser(profile as User)
+        }
+      }
+
+      closeLoginSheet()
+      // 登录成功后执行之前的操作（如点赞、评论）
+      loginSheet.onLogin?.()
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '登录失败'
+      useUIStore.getState().addToast('error', message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -56,16 +84,18 @@ export default function LoginSheet() {
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={handleLogin}
-                className="w-full btn-primary text-body py-3.5"
-                aria-label="手机号登录"
+                disabled={loading}
+                className={`w-full btn-primary text-body py-3.5 ${loading ? 'opacity-60' : ''}`}
+                aria-label="快捷登录"
               >
-                手机号快捷登录
+                {loading ? '登录中...' : '一键快捷登录'}
               </motion.button>
 
               <motion.button
                 whileTap={{ scale: 0.96 }}
                 onClick={handleLogin}
-                className="w-full btn-secondary text-body py-3.5"
+                disabled={loading}
+                className={`w-full btn-secondary text-body py-3.5 ${loading ? 'opacity-60' : ''}`}
                 aria-label="微信登录"
               >
                 微信登录
@@ -75,6 +105,7 @@ export default function LoginSheet() {
             {/* Close */}
             <button
               onClick={closeLoginSheet}
+              disabled={loading}
               className="w-full text-caption text-gray-400 mt-4 py-2"
               aria-label="关闭登录面板"
             >

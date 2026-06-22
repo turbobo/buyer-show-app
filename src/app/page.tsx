@@ -2,83 +2,84 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MOCK_POSTS, HOT_TAGS } from '@/lib/mock-data'
+import { HOT_TAGS } from '@/lib/mock-data'
+import { fetchPosts } from '@/services/post'
+import { useAuthInit } from '@/hooks/useAuthInit'
+import { seedIfEmpty } from '@/lib/seed'
 import PostCard from '@/components/PostCard'
 import Skeleton from '@/components/Skeleton'
 import type { Post } from '@/types'
 
 const ALL_TAGS = ['全部', ...HOT_TAGS]
-const INITIAL_COUNT = 4
-const LOAD_MORE_COUNT = 2
-
-function splitIntoColumns(posts: Post[], colCount: number): Post[][] {
-  const cols: Post[][] = Array.from({ length: colCount }, () => [])
-  posts.forEach((post, i) => {
-    cols[i % colCount].push(post)
-  })
-  return cols
-}
 
 export default function HomePage() {
+  const { ready: authReady } = useAuthInit()
   const [activeTag, setActiveTag] = useState('全部')
+  const [posts, setPosts] = useState<Post[]>([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const tagBarRef = useRef<HTMLDivElement>(null)
 
-  // Filtered posts
-  const filtered = activeTag === '全部'
-    ? MOCK_POSTS
-    : MOCK_POSTS.filter((p) => p.tags.includes(activeTag))
+  // 加载帖子数据
+  const loadPosts = useCallback(async (p: number, tag: string, append = false) => {
+    try {
+      const res = await fetchPosts(p, tag === '全部' ? undefined : tag)
+      if (append) {
+        setPosts((prev) => [...prev, ...res.list])
+      } else {
+        setPosts(res.list)
+      }
+      setHasMore(res.hasMore)
+      setPage(p)
+    } catch (err) {
+      console.error('[home] loadPosts error:', err)
+    }
+  }, [])
 
-  const visiblePosts = filtered.slice(0, visibleCount)
-  const hasMore = visibleCount < filtered.length
-
-  // Initial loading simulation
+  // 初始化：等认证就绪 → 种子数据 → 加载帖子
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (!authReady) return
 
-  // Tag change resets visible count with loading
-  const handleTagChange = useCallback((tag: string) => {
-    setActiveTag(tag)
-    setVisibleCount(INITIAL_COUNT)
-    setLoading(true)
-    setTimeout(() => setLoading(false), 500)
-    // Scroll feed to top
-    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [])
-
-  // Pull-to-refresh simulation
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true)
-    setLoading(true)
-    setVisibleCount(INITIAL_COUNT)
-    setTimeout(() => {
+    async function init() {
+      setLoading(true)
+      await seedIfEmpty()
+      await loadPosts(1, activeTag)
       setLoading(false)
-      setRefreshing(false)
-    }, 800)
-  }, [])
+    }
+    init()
+  }, [authReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reach-bottom detection
+  // 标签切换
+  const handleTagChange = useCallback(async (tag: string) => {
+    setActiveTag(tag)
+    setLoading(true)
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    await loadPosts(1, tag)
+    setLoading(false)
+  }, [loadPosts])
+
+  // 下拉刷新
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadPosts(1, activeTag)
+    setRefreshing(false)
+  }, [activeTag, loadPosts])
+
+  // 触底加载更多
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
     if (!el || loadingMore || !hasMore) return
     const { scrollTop, scrollHeight, clientHeight } = el
     if (scrollTop + clientHeight >= scrollHeight - 80) {
       setLoadingMore(true)
-      setTimeout(() => {
-        setVisibleCount((prev) => Math.min(prev + LOAD_MORE_COUNT, filtered.length))
-        setLoadingMore(false)
-      }, 600)
+      loadPosts(page + 1, activeTag, true).finally(() => setLoadingMore(false))
     }
-  }, [loadingMore, hasMore, filtered.length])
+  }, [loadingMore, hasMore, page, activeTag, loadPosts])
 
-  // Scroll-to-top button visibility
-  const [showScrollTop, setShowScrollTop] = useState(false)
   const onScrollUI = useCallback(() => {
     handleScroll()
     const el = scrollRef.current
@@ -105,7 +106,6 @@ export default function HomePage() {
               真实购物体验 · 好物发现社区
             </p>
           </div>
-          {/* Refresh button */}
           <motion.button
             whileTap={{ scale: 0.9, rotate: -180 }}
             onClick={handleRefresh}
@@ -134,7 +134,6 @@ export default function HomePage() {
       {/* ── Tag Filter Bar ── */}
       <div className="shrink-0 px-5 md:px-8 pb-3 md:pt-4">
         <div
-          ref={tagBarRef}
           role="tablist"
           className="flex gap-2 overflow-x-auto py-1 -mx-5 px-5"
           style={{ scrollbarWidth: 'none' }}
@@ -186,24 +185,23 @@ export default function HomePage() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
             >
-              {filtered.length === 0 ? (
+              {posts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-                  <span className="text-5xl mb-4">🔍</span>
-                  <p className="text-sm">暂无「{activeTag}」相关内容</p>
-                  <p className="text-xs mt-1">换个标签看看吧</p>
+                  <span className="text-5xl mb-4">📦</span>
+                  <p className="text-sm">
+                    {activeTag === '全部' ? '还没有内容，来发第一条买家秀吧' : `暂无「${activeTag}」相关内容`}
+                  </p>
                 </div>
               ) : (
                 <>
-                  {/* Masonry grid: responsive columns */}
                   <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 space-y-3">
-                    {visiblePosts.map((post, i) => (
+                    {posts.map((post, i) => (
                       <div key={post.id} className="break-inside-avoid">
                         <PostCard post={post} index={i} />
                       </div>
                     ))}
                   </div>
 
-                  {/* Bottom loading indicator */}
                   {loadingMore && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -215,12 +213,7 @@ export default function HomePage() {
                           <motion.span
                             key={i}
                             animate={{ y: [0, -6, 0] }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 0.6,
-                              delay: i * 0.15,
-                              ease: 'easeInOut',
-                            }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15, ease: 'easeInOut' }}
                             className="w-1.5 h-1.5 rounded-full bg-coral-400"
                           />
                         ))}
@@ -229,7 +222,7 @@ export default function HomePage() {
                     </motion.div>
                   )}
 
-                  {!hasMore && visiblePosts.length > 0 && (
+                  {!hasMore && posts.length > 0 && (
                     <div className="flex items-center justify-center py-8">
                       <div className="flex items-center gap-3">
                         <div className="h-px w-8 bg-gradient-to-r from-transparent to-coral-200" />
@@ -257,16 +250,7 @@ export default function HomePage() {
             className="absolute bottom-24 right-4 w-10 h-10 rounded-full bg-white shadow-lg shadow-black/10 flex items-center justify-center z-10"
             aria-label="回到顶部"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#FF6B35"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="18 15 12 9 6 15" />
             </svg>
           </motion.button>

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MOCK_POSTS } from '@/lib/mock-data'
 import PostCard from '@/components/PostCard'
 import { useUserStore } from '@/store/user'
+import { supabase } from '@/lib/supabase'
+import { quickLogin, quickLogout } from '@/lib/auth-helpers'
+import type { Post } from '@/types'
 
 const MENU_ITEMS = [
   {
@@ -57,8 +59,9 @@ const sectionVariants = {
 }
 
 export default function ProfilePage() {
-  const { user, isLoggedIn, loginMock, logout } = useUserStore()
+  const { user, isLoggedIn } = useUserStore()
   const [toast, setToast] = useState<string | null>(null)
+  const [userPosts, setUserPosts] = useState<Post[]>([])
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -69,14 +72,30 @@ export default function ProfilePage() {
     showToast(`${label} - 功能开发中`)
   }
 
-  const handleLogin = () => {
-    loginMock()
+  const handleLogin = async () => {
+    await quickLogin()
   }
 
-  // User posts
-  const userPosts = isLoggedIn && user
-    ? MOCK_POSTS.filter((p) => p.user_id === user.id)
-    : []
+  const handleLogout = async () => {
+    await quickLogout()
+  }
+
+  // Fetch user posts from Supabase
+  useEffect(() => {
+    if (!isLoggedIn || !user) {
+      setUserPosts([])
+      return
+    }
+    supabase
+      .from('posts')
+      .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setUserPosts(data as Post[])
+      })
+  }, [isLoggedIn, user])
 
   return (
     <div className="min-h-screen bg-warm-50 pb-28 md:px-8 md:pt-20">
@@ -271,8 +290,8 @@ export default function ProfilePage() {
             >
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  logout()
+                onClick={async () => {
+                  await handleLogout()
                   showToast('已退出登录')
                 }}
                 className="w-full py-3.5 rounded-2xl text-sm font-medium text-gray-400 bg-white border border-gray-100 shadow-sm hover:text-red-400 hover:border-red-100 transition-all duration-200"

@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation'
 import ImageUploader from '@/components/ImageUploader'
 import StarRating from '@/components/StarRating'
 import { HOT_TAGS } from '@/lib/mock-data'
+import { quickLogin } from '@/lib/auth-helpers'
+import { createPost } from '@/services/post'
 import { useUserStore } from '@/store/user'
+import { useUIStore } from '@/store/ui'
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -19,7 +22,7 @@ const sectionVariants = {
 
 export default function PublishPage() {
   const router = useRouter()
-  const { user, isLoggedIn, loginMock } = useUserStore()
+  const { user, isLoggedIn } = useUserStore()
 
   const [images, setImages] = useState<string[]>([])
   const [title, setTitle] = useState('')
@@ -45,30 +48,44 @@ export default function PublishPage() {
     )
   }
 
-  const handleLogin = () => {
-    loginMock()
+  const handleLogin = async () => {
+    await quickLogin()
     setShowLoginPrompt(false)
   }
 
-  const handleSubmit = () => {
-    if (!title.trim()) return
+  const handleSubmit = async () => {
+    if (!title.trim()) {
+      useUIStore.getState().addToast('error', '请输入标题')
+      return
+    }
+    if (!content.trim()) {
+      useUIStore.getState().addToast('error', '请输入内容')
+      return
+    }
     if (!isLoggedIn) {
       setShowLoginPrompt(true)
       return
     }
 
     setSubmitting(true)
-
-    // Simulate submit delay
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      await createPost({
+        title: title.trim(),
+        content: content.trim(),
+        images,
+        tags: selectedTags,
+        product_name: productName.trim() || undefined,
+        price: price.trim() || undefined,
+        rating: rating || 5,
+      })
       setShowSuccess(true)
-
-      // Redirect after success animation
-      setTimeout(() => {
-        router.push('/')
-      }, 1600)
-    }, 800)
+      setTimeout(() => router.push('/'), 1600)
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '发布失败'
+      useUIStore.getState().addToast('error', message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const hasHistory = typeof window !== 'undefined' && window.history.length > 1

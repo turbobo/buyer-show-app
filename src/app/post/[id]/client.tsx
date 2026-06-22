@@ -70,7 +70,7 @@ export default function PostDetailClient() {
       created_at: new Date().toISOString(),
       user: {
         nickname: '我',
-        avatar_url: 'https://api.dicebear.com/7.x/thumbs/svg?seed=Me&backgroundColor=ffdfbf',
+        avatar_url: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="40" fill="#FF6B35"/><text x="40" y="42" text-anchor="middle" dominant-baseline="central" fill="white" font-size="36" font-family="sans-serif" font-weight="600">我</text></svg>')}`,
       },
     }
     setComments((prev) => [...prev, newComment])
@@ -92,7 +92,34 @@ export default function PostDetailClient() {
 
   const stars = Array.from({ length: 5 }, (_, i) => i < post.rating)
 
+  // Schema.org 结构化数据
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Review',
+    name: post.title,
+    reviewBody: post.content,
+    itemReviewed: {
+      '@type': 'Product',
+      name: post.product_name || post.title,
+    },
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: String(post.rating),
+      bestRating: '5',
+    },
+    author: {
+      '@type': 'Person',
+      name: post.user?.nickname || '匿名',
+    },
+    datePublished: post.created_at,
+  }
+
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
     <div className="min-h-screen bg-warm-50 pb-24 relative">
       {/* Back Button */}
       <motion.button
@@ -177,7 +204,7 @@ export default function PostDetailClient() {
 
         {/* Like Button */}
         <motion.div className="mt-4 flex justify-center" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-          <motion.button onClick={toggleLike} whileTap={{ scale: 0.9 }} className={`flex items-center gap-2 px-8 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-sm`}>
+          <motion.button onClick={toggleLike} whileTap={{ scale: 0.9 }} aria-label={isLiked ? '取消点赞' : '点赞'} className={`flex items-center gap-2 px-8 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-sm`}>
             <motion.span animate={heartBeat ? { scale: [1, 1.4, 0.9, 1.2, 1], rotate: [0, -10, 10, -5, 0] } : { scale: 1 }} transition={{ duration: 0.5, ease: 'easeInOut' }} className="text-xl">
               {isLiked ? '❤️' : '🤍'}
             </motion.span>
@@ -214,7 +241,7 @@ export default function PostDetailClient() {
       <div className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white/95 backdrop-blur-lg border-t border-gray-100 z-40 safe-bottom">
         <div className="flex items-center gap-2 px-4 py-2.5">
           <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitComment()} placeholder="说点什么..." className="flex-1 h-9 px-4 rounded-full bg-gray-50 border border-gray-100 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-coral-300 focus:ring-1 focus:ring-coral-100 transition-colors" />
-          <motion.button whileTap={{ scale: 0.88 }} onClick={submitComment} disabled={!commentText.trim()} className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${commentText.trim() ? 'bg-gradient-to-r from-coral-500 to-coral-400 shadow-md shadow-coral-200' : 'bg-gray-100'}`}>
+          <motion.button whileTap={{ scale: 0.88 }} onClick={submitComment} disabled={!commentText.trim()} aria-label="发送评论" className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${commentText.trim() ? 'bg-gradient-to-r from-coral-500 to-coral-400 shadow-md shadow-coral-200' : 'bg-gray-100'}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={commentText.trim() ? 'white' : '#9CA3AF'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
@@ -223,5 +250,6 @@ export default function PostDetailClient() {
         </div>
       </div>
     </div>
+    </>
   )
 }

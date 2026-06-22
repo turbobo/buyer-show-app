@@ -110,7 +110,7 @@ export default function HomePage() {
             whileTap={{ scale: 0.9, rotate: -180 }}
             onClick={handleRefresh}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-sm"
-            aria-label="刷新"
+            aria-label="刷新内容"
           >
             <motion.svg
               animate={refreshing ? { rotate: 360 } : {}}
@@ -135,6 +135,7 @@ export default function HomePage() {
       <div className="shrink-0 px-5 md:px-8 pb-3 md:pt-4">
         <div
           ref={tagBarRef}
+          role="tablist"
           className="flex gap-2 overflow-x-auto py-1 -mx-5 px-5"
           style={{ scrollbarWidth: 'none' }}
         >
@@ -145,6 +146,8 @@ export default function HomePage() {
                 key={tag}
                 onClick={() => handleTagChange(tag)}
                 whileTap={{ scale: 0.93 }}
+                role="tab"
+                aria-selected={isActive}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'bg-gradient-to-r from-coral-500 to-coral-400 text-white shadow-md shadow-coral-200'
@@ -252,6 +255,7 @@ export default function HomePage() {
             whileTap={{ scale: 0.85 }}
             onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
             className="absolute bottom-24 right-4 w-10 h-10 rounded-full bg-white shadow-lg shadow-black/10 flex items-center justify-center z-10"
+            aria-label="回到顶部"
           >
             <svg
               width="18"

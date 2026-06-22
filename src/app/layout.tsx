@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import TabBar from '@/components/layout/TabBar'
 import TopNav from '@/components/layout/TopNav'
+import GlobalUI from '@/components/ui/GlobalUI'
 
 export const metadata: Metadata = {
   title: '买家说 - 真实购物分享社区',
@@ -25,6 +26,8 @@ export default function RootLayout({
           {/* 移动端底部 TabBar */}
           <TabBar />
         </div>
+        {/* 全局 Toast + Modal */}
+        <GlobalUI />
       </body>
     </html>
   )

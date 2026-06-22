@@ -26,11 +26,34 @@ const config: Config = {
           300: '#DDD2C7',
         },
       },
+      fontFamily: {
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'sans-serif'],
+        num: ['DIN Alternate', 'Avenir Next', 'tabular-nums'],
+      },
+      fontSize: {
+        'h1': ['20px', { lineHeight: '28px', fontWeight: '700' }],
+        'h2': ['16px', { lineHeight: '24px', fontWeight: '700' }],
+        'body': ['14px', { lineHeight: '22px', fontWeight: '400' }],
+        'caption': ['12px', { lineHeight: '18px', fontWeight: '400' }],
+        'tiny': ['10px', { lineHeight: '14px', fontWeight: '500' }],
+      },
+      borderRadius: {
+        'card': '16px',
+        'btn': '12px',
+        'modal': '24px',
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(0,0,0,0.06)',
+        'float': '0 4px 12px rgba(0,0,0,0.08)',
+        'modal': '0 8px 24px rgba(0,0,0,0.12)',
+        'coral': '0 4px 12px rgba(255,107,53,0.25)',
+      },
       animation: {
         'shimmer': 'shimmer 1.5s infinite',
         'heartbeat': 'heartbeat 0.6s ease-in-out',
         'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
         'slide-up': 'slideUp 0.3s ease-out',
+        'spin-slow': 'spin 0.8s linear infinite',
       },
       keyframes: {
         shimmer: {

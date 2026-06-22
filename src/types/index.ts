@@ -1,3 +1,4 @@
+/** 用户资料（对应 profiles 表） */
 export interface User {
   id: string
   nickname: string
@@ -7,8 +8,10 @@ export interface User {
   follower_count: number
   following_count: number
   created_at: string
+  updated_at: string
 }
 
+/** 帖子（对应 posts 表） */
 export interface Post {
   id: string
   user_id: string
@@ -21,17 +24,72 @@ export interface Post {
   rating: number
   like_count: number
   comment_count: number
-  status: 'active' | 'hidden'
+  status: 'active' | 'hidden' | 'deleted'
   created_at: string
+  updated_at: string
+  /** JOIN 字段：作者信息 */
   user?: Pick<User, 'nickname' | 'avatar_url'>
+  /** JOIN 字段：当前用户是否已点赞 */
   is_liked?: boolean
 }
 
+/** 评论（对应 comments 表） */
 export interface Comment {
   id: string
   post_id: string
   user_id: string
   content: string
   created_at: string
+  /** JOIN 字段：评论者信息 */
   user?: Pick<User, 'nickname' | 'avatar_url'>
+}
+
+/** 点赞（对应 likes 表） */
+export interface Like {
+  id: string
+  post_id: string
+  user_id: string
+  created_at: string
+}
+
+/** 关注（对应 follows 表） */
+export interface Follow {
+  id: string
+  follower_id: string
+  following_id: string
+  created_at: string
+}
+
+/** 搜索历史（对应 search_history 表） */
+export interface SearchHistory {
+  id: string
+  user_id: string
+  keyword: string
+  created_at: string
+}
+
+/** 创建帖子参数 */
+export interface CreatePostParams {
+  title: string
+  content: string
+  images: string[]
+  tags?: string[]
+  product_name?: string
+  price?: string
+  rating?: number
+}
+
+/** 分页响应 */
+export interface PaginatedResponse<T> {
+  list: T[]
+  total: number
+  hasMore: boolean
+  page: number
+}
+
+/** API 统一响应 */
+export interface ApiResponse<T> {
+  code: number
+  message: string
+  data: T
 }

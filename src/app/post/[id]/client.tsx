@@ -114,14 +114,14 @@ export default function PostDetailClient() {
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
     <div className="min-h-screen bg-warm-50 pb-24 relative">
-      {/* Back Button */}
+      {/* Back Button (mobile only) */}
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
         onClick={() => router.back()}
-        className="fixed top-4 md:top-20 z-30 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center"
-        aria-label="返回"
+        className="fixed top-4 z-30 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center md:hidden"
+        aria-label="返回上一页"
         style={{ left: 'max(1rem, calc(50% - 215px + 1rem))' }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

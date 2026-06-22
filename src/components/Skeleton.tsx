@@ -1,4 +1,5 @@
 export default function Skeleton() {
+  const heights = [200, 220, 190, 210]
   return (
     <div className="space-y-4 px-4 pt-4">
       {/* 标签栏骨架 */}
@@ -10,7 +11,7 @@ export default function Skeleton() {
       {/* 卡片骨架 */}
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="skeleton h-48 w-full" style={{ height: 180 + Math.random() * 60 }} />
+          <div className="skeleton h-48 w-full" style={{ height: heights[i % heights.length] }} />
           <div className="p-3 space-y-2">
             <div className="skeleton h-4 w-3/4 rounded" />
             <div className="skeleton h-3 w-1/2 rounded" />

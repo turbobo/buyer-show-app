@@ -5,17 +5,9 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MOCK_POSTS, MOCK_COMMENTS } from '@/lib/mock-data'
 import CommentItem from '@/components/CommentItem'
+import { useAuthGuard } from '@/hooks/useAuthGuard'
+import { fadeUp, heartbeatKeyframes, heartbeatTransition } from '@/lib/animations'
 import type { Comment } from '@/types'
-
-/* ─── animation variants ─── */
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i: number = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] },
-  }),
-}
 
 export default function PostDetailClient() {
   const params = useParams()
@@ -33,6 +25,7 @@ export default function PostDetailClient() {
   const [imageLoaded, setImageLoaded] = useState(false)
 
   const carouselRef = useRef<HTMLDivElement>(null)
+  const { guard } = useAuthGuard()
 
   useEffect(() => {
     setIsLiked(post?.is_liked ?? false)
@@ -204,8 +197,8 @@ export default function PostDetailClient() {
 
         {/* Like Button */}
         <motion.div className="mt-4 flex justify-center" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
-          <motion.button onClick={toggleLike} whileTap={{ scale: 0.9 }} aria-label={isLiked ? '取消点赞' : '点赞'} className={`flex items-center gap-2 px-8 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-sm`}>
-            <motion.span animate={heartBeat ? { scale: [1, 1.4, 0.9, 1.2, 1], rotate: [0, -10, 10, -5, 0] } : { scale: 1 }} transition={{ duration: 0.5, ease: 'easeInOut' }} className="text-xl">
+          <motion.button onClick={() => guard(toggleLike, '点赞')} whileTap={{ scale: 0.9 }} aria-label={isLiked ? '取消点赞' : '点赞'} className={`flex items-center gap-2 px-8 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-sm`}>
+            <motion.span animate={heartBeat ? heartbeatKeyframes : { scale: 1 }} transition={heartbeatTransition} className="text-xl">
               {isLiked ? '❤️' : '🤍'}
             </motion.span>
             <motion.span key={likeCount} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className={`text-sm font-semibold ${isLiked ? 'text-coral-500' : 'text-gray-400'}`}>
@@ -240,8 +233,8 @@ export default function PostDetailClient() {
       {/* Bottom Comment Bar (mobile only) */}
       <div className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white/95 backdrop-blur-lg border-t border-gray-100 z-40 safe-bottom">
         <div className="flex items-center gap-2 px-4 py-2.5">
-          <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitComment()} placeholder="说点什么..." className="flex-1 h-9 px-4 rounded-full bg-gray-50 border border-gray-100 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-coral-300 focus:ring-1 focus:ring-coral-100 transition-colors" />
-          <motion.button whileTap={{ scale: 0.88 }} onClick={submitComment} disabled={!commentText.trim()} aria-label="发送评论" className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${commentText.trim() ? 'bg-gradient-to-r from-coral-500 to-coral-400 shadow-md shadow-coral-200' : 'bg-gray-100'}`}>
+          <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && guard(() => submitComment(), '评论')} placeholder="说点什么..." className="flex-1 h-9 px-4 rounded-full bg-gray-50 border border-gray-100 text-sm text-gray-700 placeholder:text-gray-300 focus:outline-none focus:border-coral-300 focus:ring-1 focus:ring-coral-100 transition-colors" />
+          <motion.button whileTap={{ scale: 0.88 }} onClick={() => guard(() => submitComment(), '评论')} disabled={!commentText.trim()} aria-label="发送评论" className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-colors duration-200 ${commentText.trim() ? 'bg-gradient-to-r from-coral-500 to-coral-400 shadow-md shadow-coral-200' : 'bg-gray-100'}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={commentText.trim() ? 'white' : '#9CA3AF'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />

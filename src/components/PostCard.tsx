@@ -1,9 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
 import { motion } from 'framer-motion'
 import type { Post } from '@/types'
 import SmartImage from '@/components/ui/SmartImage'
+import { listItem } from '@/lib/animations'
 
 interface Props {
   post: Post
@@ -11,20 +14,27 @@ interface Props {
 }
 
 export default function PostCard({ post, index = 0 }: Props) {
+  const router = useRouter()
   const coverUrl = post.images[0] || ''
   const heights = [200, 220, 240, 260, 180]
   const imgHeight = heights[index % heights.length]
   const displayLikes = post.like_count > 999
     ? `${(post.like_count / 1000).toFixed(1)}k`
     : String(post.like_count)
+  const isAboveFold = index < 2
+
+  const handlePrefetch = useCallback(() => {
+    router.prefetch(`/post/${post.id}`)
+  }, [router, post.id])
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.06 }}
+      variants={listItem}
+      initial="hidden"
+      animate="visible"
+      custom={index}
     >
-      <Link href={`/post/${post.id}`} aria-label={`查看帖子：${post.title}`}>
+      <Link href={`/post/${post.id}`} aria-label={`查看帖子：${post.title}`} onMouseEnter={handlePrefetch}>
         <article className="card mb-3 hover:shadow-float transition-shadow duration-200">
           {/* 封面图 */}
           {coverUrl && (
@@ -33,6 +43,7 @@ export default function PostCard({ post, index = 0 }: Props) {
                 src={coverUrl}
                 alt={post.title}
                 style={{ height: imgHeight }}
+                loading={isAboveFold ? 'eager' : 'lazy'}
               />
               {post.images.length > 1 && (
                 <div className="absolute top-2 right-2 bg-black/50 text-white text-tiny px-1.5 py-0.5 rounded-full">

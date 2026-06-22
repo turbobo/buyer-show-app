@@ -16,15 +16,23 @@ interface UIState {
     confirmDanger: boolean
     onConfirm: () => void
   } | null
+  loginSheet: {
+    open: boolean
+    reason: string
+    onLogin?: () => void
+  }
   addToast: (type: ToastItem['type'], message: string) => void
   removeToast: (id: string) => void
   openModal: (config: Omit<NonNullable<UIState['modal']>, 'open'>) => void
   closeModal: () => void
+  openLoginSheet: (reason: string, onLogin?: () => void) => void
+  closeLoginSheet: () => void
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
   toasts: [],
   modal: null,
+  loginSheet: { open: false, reason: '' },
 
   addToast: (type, message) => {
     const id = Math.random().toString(36).slice(2)
@@ -46,5 +54,13 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   closeModal: () => {
     set({ modal: null })
+  },
+
+  openLoginSheet: (reason, onLogin) => {
+    set({ loginSheet: { open: true, reason, onLogin } })
+  },
+
+  closeLoginSheet: () => {
+    set({ loginSheet: { open: false, reason: '' } })
   },
 }))

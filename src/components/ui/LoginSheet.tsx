@@ -1,49 +1,19 @@
 'use client'
 
-import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/store/ui'
-import { useUserStore } from '@/store/user'
-import { supabase } from '@/lib/supabase'
-import type { User } from '@/types'
 
 export default function LoginSheet() {
+  const router = useRouter()
   const { loginSheet, closeLoginSheet } = useUIStore((s) => ({
     loginSheet: s.loginSheet,
     closeLoginSheet: s.closeLoginSheet,
   }))
-  const setUser = useUserStore((s) => s.setUser)
-  const [loading, setLoading] = useState(false)
 
-  const handleLogin = async () => {
-    setLoading(true)
-    try {
-      // Supabase 匿名登录
-      const { data, error } = await supabase.auth.signInAnonymously()
-      if (error) throw error
-
-      // 获取用户资料
-      if (data.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single()
-
-        if (profile) {
-          setUser(profile as User)
-        }
-      }
-
-      closeLoginSheet()
-      // 登录成功后执行之前的操作（如点赞、评论）
-      loginSheet.onLogin?.()
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : '登录失败'
-      useUIStore.getState().addToast('error', message)
-    } finally {
-      setLoading(false)
-    }
+  const handleGoLogin = () => {
+    closeLoginSheet()
+    router.push('/login')
   }
 
   return (
@@ -70,42 +40,39 @@ export default function LoginSheet() {
             {/* Drag indicator */}
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
 
-            {/* Logo */}
+            {/* Content */}
             <div className="flex flex-col items-center mb-6">
               <span className="text-3xl mb-3">👤</span>
               <h3 className="text-h2 text-gray-800">登录后{loginSheet.reason}</h3>
               <p className="text-caption text-gray-400 mt-1">
-                登录即表示同意用户协议和隐私政策
+                注册/登录后可点赞、评论、发布内容
               </p>
             </div>
 
-            {/* Login buttons */}
+            {/* Buttons */}
             <div className="space-y-3">
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={handleLogin}
-                disabled={loading}
-                className={`w-full btn-primary text-body py-3.5 ${loading ? 'opacity-60' : ''}`}
-                aria-label="快捷登录"
+                onClick={handleGoLogin}
+                className="w-full btn-primary text-body py-3.5"
+                aria-label="邮箱登录"
               >
-                {loading ? '登录中...' : '一键快捷登录'}
+                邮箱登录
               </motion.button>
 
               <motion.button
                 whileTap={{ scale: 0.96 }}
-                onClick={handleLogin}
-                disabled={loading}
-                className={`w-full btn-secondary text-body py-3.5 ${loading ? 'opacity-60' : ''}`}
-                aria-label="微信登录"
+                onClick={handleGoLogin}
+                className="w-full btn-secondary text-body py-3.5"
+                aria-label="注册新账号"
               >
-                微信登录
+                注册新账号
               </motion.button>
             </div>
 
             {/* Close */}
             <button
               onClick={closeLoginSheet}
-              disabled={loading}
               className="w-full text-caption text-gray-400 mt-4 py-2"
               aria-label="关闭登录面板"
             >

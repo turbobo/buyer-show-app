@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import ImageUploader from '@/components/ImageUploader'
 import StarRating from '@/components/StarRating'
 import { HOT_TAGS } from '@/lib/mock-data'
-import { quickLogin } from '@/lib/auth-helpers'
+import { openLoginSheet } from '@/lib/auth-helpers'
 import { createPost } from '@/services/post'
 import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
@@ -48,9 +48,8 @@ export default function PublishPage() {
     )
   }
 
-  const handleLogin = async () => {
-    await quickLogin()
-    setShowLoginPrompt(false)
+  const handleLogin = () => {
+    openLoginSheet('发布内容')
   }
 
   const handleSubmit = async () => {

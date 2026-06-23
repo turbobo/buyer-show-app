@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import PostCard from '@/components/PostCard'
 import { useUserStore } from '@/store/user'
 import { supabase } from '@/lib/supabase'
-import { quickLogin, quickLogout } from '@/lib/auth-helpers'
+import { openLoginSheet, quickLogout } from '@/lib/auth-helpers'
 import type { Post } from '@/types'
 
 const MENU_ITEMS = [
@@ -72,8 +72,8 @@ export default function ProfilePage() {
     showToast(`${label} - 功能开发中`)
   }
 
-  const handleLogin = async () => {
-    await quickLogin()
+  const handleLogin = () => {
+    openLoginSheet('查看个人信息')
   }
 
   const handleLogout = async () => {

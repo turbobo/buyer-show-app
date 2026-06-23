@@ -7,8 +7,9 @@ import type { User } from '@/types'
 
 /**
  * 应用启动时：
- * 1. 恢复已有会话 / 匿名登录
+ * 1. 恢复已有会话（不自动匿名登录）
  * 2. 同步用户资料到 Zustand
+ * 3. 监听认证状态变化（登录/退出后自动同步）
  */
 export function useAuthInit() {
   const [ready, setReady] = useState(false)
@@ -19,26 +20,14 @@ export function useAuthInit() {
 
     async function init() {
       try {
-        // 尝试恢复已有会话
+        // 仅恢复已有会话，不做匿名登录
         const { data: { session } } = await supabase.auth.getSession()
 
-        if (!session) {
-          // 无会话 → 匿名登录
-          const { data, error } = await supabase.auth.signInAnonymously()
-          if (error) {
-            console.error('[auth] anonymous login failed:', error.message)
-            setReady(true)
-            return
-          }
-        }
-
-        // 获取用户资料
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        if (authUser && !cancelled) {
+        if (session?.user && !cancelled) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', authUser.id)
+            .eq('id', session.user.id)
             .single()
 
           if (profile && !cancelled) {
@@ -54,7 +43,7 @@ export function useAuthInit() {
 
     init()
 
-    // 监听认证状态变化
+    // 监听认证状态变化（登录/退出时自动同步）
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user && !cancelled) {
         const { data: profile } = await supabase

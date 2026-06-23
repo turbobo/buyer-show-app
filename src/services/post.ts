@@ -321,13 +321,34 @@ export async function uploadImage(file: File, folder: string = 'posts'): Promise
 
 // ─── 搜索 ───
 
-/** 搜索帖子 */
+/**
+ * 搜索帖子
+ *
+ * 匹配字段：
+ * - title / content / product_name：ILIKE 模糊匹配（部分包含）
+ * - tags：数组完全包含（cs，整段标签匹配，如 "数码"）
+ *
+ * 注：PostgREST 的 or 表达式以逗号分隔，关键词中的逗号/括号会破坏表达式，
+ * 这里做最小转义，过滤掉 ',', '(', ')'。
+ */
 export async function searchPosts(keyword: string, page: number = 1): Promise<PaginatedResponse<Post>> {
+  const safe = keyword.replace(/[,()]/g, '').trim()
+  if (!safe) {
+    return { list: [], total: 0, hasMore: false, page }
+  }
+
   const { data, error, count } = await supabase
     .from('posts')
     .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'exact' })
     .eq('status', 'active')
-    .or(`title.ilike.%${keyword}%,content.ilike.%${keyword}%,product_name.ilike.%${keyword}%`)
+    .or(
+      [
+        `title.ilike.%${safe}%`,
+        `content.ilike.%${safe}%`,
+        `product_name.ilike.%${safe}%`,
+        `tags.cs.{${safe}}`,
+      ].join(',')
+    )
     .order('created_at', { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
 

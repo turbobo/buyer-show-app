@@ -85,9 +85,65 @@ export async function createPost(params: CreatePostParams): Promise<Post> {
   return data as Post
 }
 
-/** 删除帖子 */
+/** 更新帖子（作者本人才可修改） */
+export async function updatePost(
+  postId: string,
+  params: Partial<CreatePostParams>,
+): Promise<Post> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('请先登录')
+
+  // 拉取原帖以校验归属（避免越权）
+  const { data: existing, error: fetchError } = await supabase
+    .from('posts')
+    .select('user_id')
+    .eq('id', postId)
+    .single()
+
+  if (fetchError || !existing) throw new Error('帖子不存在')
+  if (existing.user_id !== user.id) throw new Error('无权修改此帖子')
+
+  // 仅传入字段会被更新，避免误清空
+  const updates: Record<string, unknown> = {}
+  if (params.title !== undefined) updates.title = params.title
+  if (params.content !== undefined) updates.content = params.content
+  if (params.images !== undefined) updates.images = params.images
+  if (params.tags !== undefined) updates.tags = params.tags
+  if (params.product_name !== undefined) updates.product_name = params.product_name
+  if (params.price !== undefined) updates.price = params.price
+  if (params.rating !== undefined) updates.rating = params.rating
+
+  const { data, error } = await supabase
+    .from('posts')
+    .update(updates)
+    .eq('id', postId)
+    .eq('user_id', user.id) // 双重保险：让 RLS/SQL 一起兜底
+    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
+    .single()
+
+  if (error) throw new Error(`更新失败: ${error.message}`)
+  return data as Post
+}
+
+/** 删除帖子（作者本人才可删除） */
 export async function deletePost(postId: string): Promise<void> {
-  const { error } = await supabase.from('posts').delete().eq('id', postId)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('请先登录')
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('posts')
+    .select('user_id')
+    .eq('id', postId)
+    .single()
+
+  if (fetchError || !existing) throw new Error('帖子不存在')
+  if (existing.user_id !== user.id) throw new Error('无权删除此帖子')
+
+  const { error } = await supabase
+    .from('posts')
+    .delete()
+    .eq('id', postId)
+    .eq('user_id', user.id)
   if (error) throw new Error(`删除失败: ${error.message}`)
 }
 

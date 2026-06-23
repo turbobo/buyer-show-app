@@ -10,6 +10,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard'
 import { useUIStore } from '@/store/ui'
 import { useUserStore } from '@/store/user'
 import { fadeUp, heartbeatKeyframes, heartbeatTransition } from '@/lib/animations'
+import MobileBackButton from '@/components/MobileBackButton'
 import type { Post, Comment } from '@/types'
 
 export default function PostDetailClient() {
@@ -170,19 +171,7 @@ export default function PostDetailClient() {
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <div className="min-h-screen bg-warm-50 pb-24 relative">
       {/* Back Button (mobile only) */}
-      <motion.button
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        onClick={() => router.back()}
-        className="fixed top-4 z-30 w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center md:hidden"
-        aria-label="返回上一页"
-        style={{ left: 'max(1rem, calc(50% - 215px + 1rem))' }}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </motion.button>
+      <MobileBackButton />
 
       <div className="md:flex md:gap-6 md:px-8 md:pt-16">
         {/* Image Carousel */}

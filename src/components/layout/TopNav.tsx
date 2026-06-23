@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { smartBack } from '@/lib/nav-helpers'
 
 const NAV_ITEMS = [
   { href: '/', label: '发现' },
@@ -13,7 +14,8 @@ const NAV_ITEMS = [
 
 export default function TopNav() {
   const pathname = usePathname()
-  const isDetail = pathname.startsWith('/post/')
+  const router = useRouter()
+  const isDetail = pathname.startsWith('/post/') || pathname.startsWith('/user/')
 
   return (
     <header
@@ -25,7 +27,7 @@ export default function TopNav() {
         <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="买家说首页">
           {isDetail && (
             <button
-              onClick={() => window.history.back()}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); smartBack(router) }}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center mr-2 transition-colors"
               aria-label="返回上一页"
             >

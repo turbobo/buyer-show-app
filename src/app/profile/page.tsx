@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import PostCard from '@/components/PostCard'
 import { useUserStore } from '@/store/user'
 import { supabase } from '@/lib/supabase'
+import { POST_STATUS, USER_ROLE } from '@/lib/constants'
 import { openLoginSheet, quickLogout } from '@/lib/auth-helpers'
 import { useUIStore } from '@/store/ui'
 import { deleteAccount } from '@/services/user'
@@ -58,6 +59,19 @@ const MENU_ITEMS: Array<{
       </svg>
     ),
     color: 'from-sky-400 to-blue-400',
+  },
+  {
+    label: '关注与粉丝',
+    href: '/profile/follow',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    ),
+    color: 'from-teal-400 to-emerald-400',
   },
   {
     label: '设置',

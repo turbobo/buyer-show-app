@@ -72,6 +72,21 @@ const MENU_ITEMS: Array<{
   },
 ]
 
+const ADMIN_MENU_ITEM: (typeof MENU_ITEMS)[number] = {
+  label: '管理后台',
+  href: '/admin',
+  icon: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  ),
+  color: 'from-indigo-400 to-violet-400',
+}
+
+function getProfileMenuItems(isAdmin: boolean): typeof MENU_ITEMS {
+  return isAdmin ? [ADMIN_MENU_ITEM, ...MENU_ITEMS] : MENU_ITEMS
+}
+
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
@@ -260,26 +275,29 @@ export default function ProfilePage() {
               animate="visible"
               className="bg-white rounded-2xl shadow-sm overflow-hidden mb-5"
             >
-              {MENU_ITEMS.map((item, i) => (
-                <motion.button
-                  key={item.label}
-                  whileTap={{ backgroundColor: '#f9f5f2' }}
-                  onClick={() => handleMenuClick(item)}
-                  className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
-                    i < MENU_ITEMS.length - 1 ? 'border-b border-gray-50' : ''
-                  }`}
-                >
-                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
-                    {item.icon}
-                  </div>
-                  <span className="flex-1 text-sm font-medium text-gray-700">
-                    {item.label}
-                  </span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round">
-                    <polyline points="9 18 15 12 9 6" />
+              {(() => {
+                const items = getProfileMenuItems(user?.role === 'admin')
+                return items.map((item, i) => (
+                  <motion.button
+                    key={item.label}
+                    whileTap={{ backgroundColor: '#f9f5f2' }}
+                    onClick={() => handleMenuClick(item)}
+                    className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
+                      i < items.length - 1 ? 'border-b border-gray-50' : ''
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
+                      {item.icon}
+                    </div>
+                    <span className="flex-1 text-sm font-medium text-gray-700">
+                      {item.label}
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round">
+                      <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </motion.button>
-              ))}
+              ))
+              })()}
             </motion.div>
 
             {/* ── User Posts ── */}

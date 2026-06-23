@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import TabBar from '@/components/layout/TabBar'
-import TopNav from '@/components/layout/TopNav'
 import GlobalUI from '@/components/ui/GlobalUI'
 import AuthProvider from '@/components/AuthProvider'
+import ConditionalNav from '@/components/layout/ConditionalNav'
 
 export const metadata: Metadata = {
   title: '买家说 - 真实购物分享社区',
@@ -24,15 +23,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <AuthProvider>
-          {/* PC 顶部导航栏 */}
-          <TopNav />
-          <div className="mx-auto w-full max-w-[430px] md:max-w-3xl lg:max-w-5xl xl:max-w-6xl min-h-screen">
-            <main className="pb-20 md:pb-6 md:pt-16">
-              {children}
-            </main>
-            {/* 移动端底部 TabBar */}
-            <TabBar />
-          </div>
+          <ConditionalNav>{children}</ConditionalNav>
           {/* 全局 Toast + Modal */}
           <GlobalUI />
         </AuthProvider>

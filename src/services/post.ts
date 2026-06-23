@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { Post, Comment, User, PaginatedResponse, CreatePostParams } from '@/types'
+import type { Post, Comment, PaginatedResponse, CreatePostParams } from '@/types'
 
 const PAGE_SIZE = 20
 
@@ -48,7 +48,7 @@ export async function fetchPostDetail(postId: string): Promise<{
 
   if (postError || !post) throw new Error('帖子不存在')
 
-  // 获取评论列表
+  // 评论查询（内联以避免跨 service 依赖）
   const { data: comments } = await supabase
     .from('comments')
     .select('*, user:profiles!comments_user_id_fkey(nickname, avatar_url)')
@@ -180,67 +180,6 @@ export async function toggleLike(postId: string): Promise<{ liked: boolean; like
   return { liked: !existing, like_count: post?.like_count ?? 0 }
 }
 
-/** 发表评论 */
-export async function addComment(postId: string, content: string): Promise<Comment> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-
-  const { data, error } = await supabase
-    .from('comments')
-    .insert({ post_id: postId, user_id: user.id, content })
-    .select('*, user:profiles!comments_user_id_fkey(nickname, avatar_url)')
-    .single()
-
-  if (error) throw new Error(`评论失败: ${error.message}`)
-  return data as Comment
-}
-
-// ─── 用户 ───
-
-/** 获取当前用户资料 */
-export async function fetchCurrentUser(): Promise<User | null> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (error) return null
-  return data as User
-}
-
-/** 更新用户资料 */
-export async function updateProfile(updates: Partial<Pick<User, 'nickname' | 'avatar_url' | 'bio'>>): Promise<User> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', user.id)
-    .select()
-    .single()
-
-  if (error) throw new Error(`更新失败: ${error.message}`)
-  return data as User
-}
-
-/** 获取用户发布的帖子 */
-export async function fetchUserPosts(userId: string): Promise<Post[]> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(`获取用户帖子失败: ${error.message}`)
-  return (data ?? []) as Post[]
-}
-
 // ─── 收藏 ───
 
 /** 切换收藏 */
@@ -284,74 +223,6 @@ export async function checkPostFavorited(postId: string): Promise<boolean> {
     .maybeSingle()
 
   return Boolean(data)
-}
-
-/** 获取用户收藏的帖子列表 */
-export async function fetchUserFavorites(userId: string): Promise<Post[]> {
-  const { data, error } = await supabase
-    .from('favorites')
-    .select(`
-      created_at,
-      post:posts!favorites_post_id_fkey(
-        *,
-        user:profiles!posts_user_id_fkey(nickname, avatar_url)
-      )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) throw new Error(`获取收藏失败: ${error.message}`)
-
-  // 仅保留 active 帖子（旧帖被作者隐藏/删除的不展示）
-  return (data ?? [])
-    .map((row: { post: Post | Post[] | null }) => Array.isArray(row.post) ? row.post[0] : row.post)
-    .filter((p): p is Post => p !== null && p !== undefined && p.status === 'active')
-}
-
-/** 获取用户发表的评论列表（附带原帖摘要） */
-export async function fetchUserComments(userId: string): Promise<Array<Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> }>> {
-  const { data, error } = await supabase
-    .from('comments')
-    .select(`
-      *,
-      user:profiles!comments_user_id_fkey(nickname, avatar_url),
-      post:posts!comments_post_id_fkey(id, title, images, status)
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  if (error) throw new Error(`获取评论失败: ${error.message}`)
-
-  return (data ?? [])
-    .filter((c: { post: { status: string } | null }) => c.post && c.post.status === 'active')
-    .map((c: Comment & { post: { id: string; title: string; images: string[] } }) => ({
-      ...c,
-      post: { id: c.post.id, title: c.post.title, images: c.post.images },
-    })) as Array<Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> }>
-}
-
-// ─── 关注 ───
-
-/** 切换关注 */
-export async function toggleFollow(targetUserId: string): Promise<{ following: boolean }> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-
-  const { data: existing } = await supabase
-    .from('follows')
-    .select('id')
-    .eq('follower_id', user.id)
-    .eq('following_id', targetUserId)
-    .maybeSingle()
-
-  if (existing) {
-    await supabase.from('follows').delete().eq('id', existing.id)
-  } else {
-    await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId })
-  }
-
-  return { following: !existing }
 }
 
 // ─── 图片上传 ───

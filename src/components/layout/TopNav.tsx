@@ -34,7 +34,7 @@ export default function TopNav() {
               </svg>
             </button>
           )}
-          <img src="/logo.png" alt="买家说" width={32} height={32} className="rounded-lg" />
+          <img src="/logo.svg" alt="买家说" width={32} height={32} />
           <span className="text-xl font-extrabold tracking-tight" style={{
             background: 'linear-gradient(135deg, #FF6B35 0%, #FF8A5C 50%, #FFAB87 100%)',
             WebkitBackgroundClip: 'text',

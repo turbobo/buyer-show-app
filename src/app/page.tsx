@@ -92,7 +92,7 @@ export default function HomePage() {
       <header className="shrink-0 pt-12 pb-3 px-5 md:hidden">
         <div className="flex items-end justify-between">
           <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="买家说" width={36} height={36} className="rounded-xl" />
+            <img src="/logo.svg" alt="买家说" width={36} height={36} />
             <div>
               <h1
                 className="text-2xl font-extrabold tracking-tight"

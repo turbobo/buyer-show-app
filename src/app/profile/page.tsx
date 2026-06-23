@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import PostCard from '@/components/PostCard'
 import { useUserStore } from '@/store/user'
@@ -8,9 +9,15 @@ import { supabase } from '@/lib/supabase'
 import { openLoginSheet, quickLogout } from '@/lib/auth-helpers'
 import type { Post } from '@/types'
 
-const MENU_ITEMS = [
+const MENU_ITEMS: Array<{
+  label: string
+  href: string | null
+  icon: React.ReactNode
+  color: string
+}> = [
   {
     label: '我的发布',
+    href: '/profile/posts',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
@@ -21,6 +28,7 @@ const MENU_ITEMS = [
   },
   {
     label: '我的收藏',
+    href: '/profile/favorites',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
@@ -30,6 +38,7 @@ const MENU_ITEMS = [
   },
   {
     label: '我的评论',
+    href: '/profile/comments',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -39,6 +48,7 @@ const MENU_ITEMS = [
   },
   {
     label: '设置',
+    href: null,
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="3" />
@@ -59,6 +69,7 @@ const sectionVariants = {
 }
 
 export default function ProfilePage() {
+  const router = useRouter()
   const { user, isLoggedIn } = useUserStore()
   const [toast, setToast] = useState<string | null>(null)
   const [userPosts, setUserPosts] = useState<Post[]>([])
@@ -68,8 +79,12 @@ export default function ProfilePage() {
     setTimeout(() => setToast(null), 2000)
   }
 
-  const handleMenuClick = (label: string) => {
-    showToast(`${label} - 功能开发中`)
+  const handleMenuClick = (item: typeof MENU_ITEMS[number]) => {
+    if (item.href) {
+      router.push(item.href)
+    } else {
+      showToast(`${item.label} - 功能开发中`)
+    }
   }
 
   const handleLogin = () => {
@@ -228,7 +243,7 @@ export default function ProfilePage() {
                 <motion.button
                   key={item.label}
                   whileTap={{ backgroundColor: '#f9f5f2' }}
-                  onClick={() => handleMenuClick(item.label)}
+                  onClick={() => handleMenuClick(item)}
                   className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
                     i < MENU_ITEMS.length - 1 ? 'border-b border-gray-50' : ''
                   }`}

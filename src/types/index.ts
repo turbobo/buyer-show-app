@@ -7,10 +7,10 @@ export interface User {
   post_count: number
   follower_count: number
   following_count: number
-  /** 管理员模块新增；DB 默认 'user'；mock 数据可能缺失 */
-  role?: 'user' | 'admin'
-  /** 管理员模块新增；DB 默认 'active'；mock 数据可能缺失 */
-  status?: 'active' | 'banned' | 'deleted'
+  /** 用户角色（0=普通用户 / 1=管理员；常量见 `src/lib/constants.ts` USER_ROLE） */
+  role?: number
+  /** 账号状态（0=正常 / 1=封禁 / 2=注销；常量见 `src/lib/constants.ts` USER_STATUS） */
+  status?: number
   created_at: string
   updated_at: string
 }
@@ -29,7 +29,8 @@ export interface Post {
   like_count: number
   comment_count: number
   favorite_count: number
-  status: 'active' | 'hidden' | 'deleted'
+  /** 帖子状态（0=正常 / 1=已隐藏 / 2=已删除；常量见 `src/lib/constants.ts` POST_STATUS） */
+  status: number
   created_at: string
   updated_at: string
   /** JOIN 字段：作者信息 */

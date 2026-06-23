@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { POST_STATUS } from '@/lib/constants'
 import type { Post, Comment } from '@/types'
 
 // ─── 评论 ───
@@ -46,7 +47,7 @@ export async function fetchUserComments(userId: string): Promise<Array<Comment &
   if (error) throw new Error(`获取评论失败: ${error.message}`)
 
   return (data ?? [])
-    .filter((c: { post: { status: string } | null }) => c.post && c.post.status === 'active')
+    .filter((c: { post: { status: number } | null }) => c.post && c.post.status === POST_STATUS.ACTIVE)
     .map((c: Comment & { post: { id: string; title: string; images: string[] } }) => ({
       ...c,
       post: { id: c.post.id, title: c.post.title, images: c.post.images },
@@ -73,12 +74,12 @@ export async function fetchUserCommentsGroupedByPost(userId: string): Promise<
     const postId = c.post_id
     if (!map.has(postId)) {
       const rawPost = (c as unknown as { post?: Pick<Post, 'id' | 'title' | 'images' | 'user_id' | 'status'> }).post
-      if (!rawPost || rawPost.status !== 'active') continue
+      if (!rawPost || rawPost.status !== POST_STATUS.ACTIVE) continue
       map.set(postId, {
         post: { id: rawPost.id, title: rawPost.title, images: rawPost.images },
         comments: [],
       })
-    } else if ((c as unknown as { post?: { status?: string } }).post?.status !== 'active') {
+    } else if ((c as unknown as { post?: { status?: number } }).post?.status !== POST_STATUS.ACTIVE) {
       continue
     }
     map.get(postId)!.comments.push(c)

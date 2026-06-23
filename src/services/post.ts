@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { POST_STATUS } from '@/lib/constants'
 import type { Post, Comment, PaginatedResponse, CreatePostParams } from '@/types'
 
 const PAGE_SIZE = 20
@@ -13,7 +14,7 @@ export async function fetchPosts(
   let query = supabase
     .from('posts')
     .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'exact' })
-    .eq('status', 'active')
+    .eq('status', POST_STATUS.ACTIVE)
     .order('created_at', { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
 
@@ -267,7 +268,7 @@ export async function searchPosts(keyword: string, page: number = 1): Promise<Pa
   const { data, error, count } = await supabase
     .from('posts')
     .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'exact' })
-    .eq('status', 'active')
+    .eq('status', POST_STATUS.ACTIVE)
     .or(
       [
         `title.ilike.%${safe}%`,

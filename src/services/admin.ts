@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { useUserStore } from '@/store/user'
+import { POST_STATUS, USER_ROLE, TAG_STATUS, type TagStatusValue } from '@/lib/constants'
 import type { User } from '@/types'
 
 const ADMIN_PAGE_SIZE = 20
@@ -52,7 +53,7 @@ export async function adminUnban(targetUserId: string): Promise<void> {
 
 /** 判断当前用户是否是管理员（前端快速判断用；真正权限在服务端 RPC 内校验） */
 export function isCurrentUserAdmin(): boolean {
-  return useUserStore.getState().user?.role === 'admin'
+  return useUserStore.getState().user?.role === USER_ROLE.ADMIN
 }
 
 // ─── 标签管理 ───
@@ -61,7 +62,8 @@ export interface AdminTag {
   id: string
   name: string
   description: string
-  status: 'active' | 'archived' | 'deleted'
+  /** 标签状态（0=启用 / 1=已归档 / 2=已删除；常量见 `src/lib/constants.ts` TAG_STATUS） */
+  status: TagStatusValue
   /** 引用该标签的 active 帖子数（JOIN 计算） */
   usage_count: number
   created_at: string
@@ -76,7 +78,7 @@ export async function adminFetchTags(
   let query = supabase
     .from('tags')
     .select('*', { count: 'exact' })
-    .neq('status', 'deleted')
+    .neq('status', TAG_STATUS.DELETED)
     .order('created_at', { ascending: false })
     .range((page - 1) * ADMIN_PAGE_SIZE, page * ADMIN_PAGE_SIZE - 1)
 
@@ -96,7 +98,7 @@ export async function adminFetchTags(
       const { count: c } = await supabase
         .from('posts')
         .select('id', { count: 'exact', head: true })
-        .eq('status', 'active')
+        .eq('status', POST_STATUS.ACTIVE)
         .contains('tags', [tag.name])
       return { name: tag.name, count: c ?? 0 }
     }),
@@ -119,7 +121,7 @@ export async function adminFetchActiveTagOptions(): Promise<Array<{ id: string; 
   const { data, error } = await supabase
     .from('tags')
     .select('id, name')
-    .eq('status', 'active')
+    .eq('status', TAG_STATUS.ACTIVE)
     .order('name', { ascending: true })
     .limit(200)
   if (error) throw new Error(`获取标签选项失败: ${error.message}`)

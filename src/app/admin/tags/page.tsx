@@ -11,6 +11,7 @@ import {
   type AdminTag,
 } from '@/services/admin'
 import { useUIStore } from '@/store/ui'
+import { TAG_STATUS } from '@/lib/constants'
 import { TagFormModal, MergeModal, ConfirmModal } from './modals'
 
 const PAGE_SIZE = 20
@@ -215,12 +216,12 @@ export default function AdminTagsPage() {
                   <td className="px-3 py-3">
                     <span
                       className={`inline-block px-2 py-0.5 text-[11px] rounded font-medium ${
-                        tag.status === 'active'
+                        tag.status === TAG_STATUS.ACTIVE
                           ? 'bg-emerald-50 text-emerald-500'
                           : 'bg-gray-100 text-gray-400'
                       }`}
                     >
-                      {tag.status === 'active' ? '启用' : '已归档'}
+                      {tag.status === TAG_STATUS.ACTIVE ? '启用' : '已归档'}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">

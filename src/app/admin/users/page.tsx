@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { adminFetchUsers, adminBan, adminUnban, adminPromote } from '@/services/admin'
 import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
+import { USER_ROLE, USER_STATUS } from '@/lib/constants'
 import type { User } from '@/types'
 
 const PAGE_SIZE = 20
@@ -67,7 +68,7 @@ export default function AdminUsersPage() {
         try {
           await adminBan(u.id)
           addToast('success', `已封禁 ${u.nickname}`)
-          setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, status: 'banned' } : p)))
+          setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, status: USER_STATUS.BANNED } : p)))
         } catch (err: unknown) {
           addToast('error', err instanceof Error ? err.message : '封禁失败')
         } finally {
@@ -82,7 +83,7 @@ export default function AdminUsersPage() {
     try {
       await adminUnban(u.id)
       addToast('success', `已解封 ${u.nickname}`)
-      setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, status: 'active' } : p)))
+      setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, status: USER_STATUS.ACTIVE } : p)))
     } catch (err: unknown) {
       addToast('error', err instanceof Error ? err.message : '解封失败')
     } finally {
@@ -101,7 +102,7 @@ export default function AdminUsersPage() {
         try {
           await adminPromote(u.id)
           addToast('success', `已将 ${u.nickname} 提权为管理员`)
-          setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, role: 'admin' } : p)))
+          setUsers((prev) => prev.map((p) => (p.id === u.id ? { ...p, role: USER_ROLE.ADMIN } : p)))
         } catch (err: unknown) {
           addToast('error', err instanceof Error ? err.message : '提权失败')
         } finally {
@@ -160,8 +161,8 @@ export default function AdminUsersPage() {
               <AnimatePresence>
                 {users.map((u) => {
                   const isSelf = u.id === currentUser?.id
-                  const isAdmin = u.role === 'admin'
-                  const isBanned = u.status === 'banned'
+                  const isAdmin = u.role === USER_ROLE.ADMIN
+                  const isBanned = u.status === USER_STATUS.BANNED
                   return (
                     <motion.tr
                       key={u.id}

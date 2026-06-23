@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { POST_STATUS } from '@/lib/constants'
 import type { Post, User } from '@/types'
 
 // ─── 用户 ───
@@ -78,32 +79,11 @@ export async function fetchUserPosts(userId: string): Promise<Post[]> {
     .from('posts')
     .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
     .eq('user_id', userId)
-    .eq('status', 'active')
+    .eq('status', POST_STATUS.ACTIVE)
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(`获取用户帖子失败: ${error.message}`)
   return (data ?? []) as Post[]
-}
-
-/** 切换关注 */
-export async function toggleFollow(targetUserId: string): Promise<{ following: boolean }> {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('请先登录')
-
-  const { data: existing } = await supabase
-    .from('follows')
-    .select('id')
-    .eq('follower_id', user.id)
-    .eq('following_id', targetUserId)
-    .maybeSingle()
-
-  if (existing) {
-    await supabase.from('follows').delete().eq('id', existing.id)
-  } else {
-    await supabase.from('follows').insert({ follower_id: user.id, following_id: targetUserId })
-  }
-
-  return { following: !existing }
 }
 
 /**
@@ -118,7 +98,7 @@ export async function deleteAccount(): Promise<void> {
   // 1) 隐藏所有帖子（status=deleted），保留外键完整性的同时让前台不可见
   const { error: postsErr } = await supabase
     .from('posts')
-    .update({ status: 'deleted' })
+    .update({ status: POST_STATUS.DELETED })
     .eq('user_id', user.id)
   if (postsErr) throw new Error(`清理帖子失败: ${postsErr.message}`)
 

@@ -147,7 +147,7 @@ export default function ProfilePage() {
       .from('posts')
       .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
       .eq('user_id', user.id)
-      .eq('status', 'active')
+      .eq('status', POST_STATUS.ACTIVE)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) setUserPosts(data as Post[])
@@ -290,7 +290,7 @@ export default function ProfilePage() {
               className="bg-white rounded-2xl shadow-sm overflow-hidden mb-5"
             >
               {(() => {
-                const items = getProfileMenuItems(user?.role === 'admin')
+                const items = getProfileMenuItems(user?.role === USER_ROLE.ADMIN)
                 return items.map((item, i) => (
                   <motion.button
                     key={item.label}

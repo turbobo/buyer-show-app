@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useUserStore } from '@/store/user'
+import { USER_ROLE, USER_STATUS } from '@/lib/constants'
 
 export type AdminGuardState =
   | { status: 'loading' }
@@ -26,11 +27,11 @@ export function useAdminGuard(): { state: AdminGuardState } {
       setState({ status: 'unauthorized', reason: 'not-logged-in' })
       return
     }
-    if (user.status === 'banned') {
+    if (user.status === USER_STATUS.BANNED) {
       setState({ status: 'unauthorized', reason: 'banned' })
       return
     }
-    if (user.role !== 'admin') {
+    if (user.role !== USER_ROLE.ADMIN) {
       setState({ status: 'unauthorized', reason: 'not-admin' })
       return
     }

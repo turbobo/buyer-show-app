@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { POST_STATUS } from '@/lib/constants'
 import PostDetailClient from './client'
 
 // 服务端直接创建 Supabase 客户端（不依赖 NEXT_PUBLIC_ 变量）
@@ -15,7 +16,7 @@ export async function generateStaticParams() {
     const { data } = await supabase
       .from('posts')
       .select('id')
-      .eq('status', 'active')
+      .eq('status', POST_STATUS.ACTIVE)
       .limit(100)
     return (data ?? []).map((p) => ({ id: p.id }))
   } catch {

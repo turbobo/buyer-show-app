@@ -53,12 +53,15 @@ export default function PublishPage() {
   }
 
   const handleSubmit = async () => {
-    if (!title.trim()) {
-      useUIStore.getState().addToast('error', '请输入标题')
+    const trimmedTitle = title.trim()
+    const trimmedContent = content.trim()
+
+    if (trimmedTitle.length < 2 || trimmedTitle.length > 50) {
+      useUIStore.getState().addToast('error', '标题需 2-50 字')
       return
     }
-    if (!content.trim()) {
-      useUIStore.getState().addToast('error', '请输入内容')
+    if (trimmedContent.length < 10 || trimmedContent.length > 2000) {
+      useUIStore.getState().addToast('error', '正文至少 10 字（最多 2000 字）')
       return
     }
     if (!isLoggedIn) {
@@ -69,8 +72,8 @@ export default function PublishPage() {
     setSubmitting(true)
     try {
       await createPost({
-        title: title.trim(),
-        content: content.trim(),
+        title: trimmedTitle,
+        content: trimmedContent,
         images,
         tags: selectedTags,
         product_name: productName.trim() || undefined,
@@ -163,11 +166,11 @@ export default function PublishPage() {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value.slice(0, 2000))}
-              placeholder="分享你的真实使用感受，帮助更多人做出选择..."
+              placeholder="分享你的真实使用感受，帮助更多人做出选择...（至少 10 字）"
               rows={5}
               className="w-full bg-white rounded-2xl px-4 py-3.5 text-sm text-gray-800 placeholder-gray-300 shadow-sm border-0 outline-none focus:ring-2 focus:ring-coral-200 transition-all resize-none leading-relaxed"
             />
-            <span className="absolute right-4 bottom-3 text-[11px] text-gray-300">
+            <span className={`absolute right-4 bottom-3 text-[11px] ${content.trim().length > 0 && content.trim().length < 10 ? 'text-coral-500' : 'text-gray-300'}`}>
               {content.length}/2000
             </span>
           </div>
@@ -284,31 +287,65 @@ export default function PublishPage() {
 
       {/* ── Fixed Submit Button ── */}
       <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] p-5 pb-8 bg-gradient-to-t from-warm-50 via-warm-50 to-transparent z-30">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={handleSubmit}
-          disabled={submitting || !title.trim()}
-          className={`w-full py-3.5 rounded-2xl text-base font-semibold transition-all duration-300 shadow-lg ${
-            !title.trim()
-              ? 'bg-gray-200 text-gray-400 shadow-none cursor-not-allowed'
-              : submitting
-                ? 'bg-coral-300 text-white shadow-coral-200/30 cursor-wait'
-                : 'bg-gradient-to-r from-coral-500 to-coral-400 text-white shadow-coral-300/40 hover:shadow-coral-300/60'
-          }`}
-        >
-          {submitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-                className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-              />
-              发布中...
-            </span>
-          ) : (
-            '发布买家秀'
-          )}
-        </motion.button>
+        {(() => {
+          const trimmedTitle = title.trim()
+          const trimmedContent = content.trim()
+          const isFormValid = trimmedTitle.length >= 2 && trimmedContent.length >= 10
+          // 计算缺什么 → 用户能看到具体原因
+          const hint = !trimmedTitle
+            ? '请填写标题'
+            : trimmedTitle.length < 2
+              ? `标题还需 ${2 - trimmedTitle.length} 字`
+              : !trimmedContent
+                ? '请填写使用体验'
+                : trimmedContent.length < 10
+                  ? `使用体验还需 ${10 - trimmedContent.length} 字`
+                  : null
+          return (
+            <>
+              <AnimatePresence>
+                {hint && (
+                  <motion.p
+                    key={hint}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-2 text-center text-xs text-coral-500"
+                  >
+                    {hint}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              <motion.button
+                whileTap={{ scale: isFormValid ? 0.96 : 1 }}
+                onClick={handleSubmit}
+                disabled={submitting}
+                aria-disabled={!isFormValid || submitting}
+                className={`w-full py-3.5 rounded-2xl text-base font-semibold transition-all duration-300 shadow-lg ${
+                  !isFormValid
+                    ? 'bg-gray-200 text-gray-400 shadow-none cursor-not-allowed'
+                    : submitting
+                      ? 'bg-coral-300 text-white shadow-coral-200/30 cursor-wait'
+                      : 'bg-gradient-to-r from-coral-500 to-coral-400 text-white shadow-coral-300/40 hover:shadow-coral-300/60'
+                }`}
+              >
+                {submitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
+                      className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                    />
+                    发布中...
+                  </span>
+                ) : (
+                  '发布买家秀'
+                )}
+              </motion.button>
+            </>
+          )
+        })()}
       </div>
 
       {/* ── Login Prompt Modal ── */}

@@ -185,6 +185,96 @@ export async function fetchUserPosts(userId: string): Promise<Post[]> {
   return (data ?? []) as Post[]
 }
 
+// ─── 收藏 ───
+
+/** 切换收藏 */
+export async function toggleFavorite(postId: string): Promise<{ favorited: boolean; favorite_count: number }> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('请先登录')
+
+  const { data: existing } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (existing) {
+    await supabase.from('favorites').delete().eq('id', existing.id)
+  } else {
+    await supabase.from('favorites').insert({ post_id: postId, user_id: user.id })
+  }
+
+  // 触发器已自动更新 posts.favorite_count
+  const { data: post } = await supabase
+    .from('posts')
+    .select('favorite_count')
+    .eq('id', postId)
+    .single()
+
+  return { favorited: !existing, favorite_count: post?.favorite_count ?? 0 }
+}
+
+/** 检查当前用户是否已收藏帖子 */
+export async function checkPostFavorited(postId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data } = await supabase
+    .from('favorites')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  return Boolean(data)
+}
+
+/** 获取用户收藏的帖子列表 */
+export async function fetchUserFavorites(userId: string): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from('favorites')
+    .select(`
+      created_at,
+      post:posts!favorites_post_id_fkey(
+        *,
+        user:profiles!posts_user_id_fkey(nickname, avatar_url)
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`获取收藏失败: ${error.message}`)
+
+  // 仅保留 active 帖子（旧帖被作者隐藏/删除的不展示）
+  return (data ?? [])
+    .map((row: { post: Post | Post[] | null }) => Array.isArray(row.post) ? row.post[0] : row.post)
+    .filter((p): p is Post => p !== null && p !== undefined && p.status === 'active')
+}
+
+/** 获取用户发表的评论列表（附带原帖摘要） */
+export async function fetchUserComments(userId: string): Promise<Array<Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> }>> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select(`
+      *,
+      user:profiles!comments_user_id_fkey(nickname, avatar_url),
+      post:posts!comments_post_id_fkey(id, title, images, status)
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  if (error) throw new Error(`获取评论失败: ${error.message}`)
+
+  return (data ?? [])
+    .filter((c: { post: { status: string } | null }) => c.post && c.post.status === 'active')
+    .map((c: Comment & { post: { id: string; title: string; images: string[] } }) => ({
+      ...c,
+      post: { id: c.post.id, title: c.post.title, images: c.post.images },
+    })) as Array<Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> }>
+}
+
 // ─── 关注 ───
 
 /** 切换关注 */

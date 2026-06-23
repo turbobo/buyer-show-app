@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { fetchPostDetail, toggleLike as toggleLikeApi, addComment as addCommentApi } from '@/services/post'
+import { fetchPostDetail, toggleLike as toggleLikeApi, addComment as addCommentApi, toggleFavorite as toggleFavoriteApi, checkPostFavorited } from '@/services/post'
 import CommentItem from '@/components/CommentItem'
 import { useAuthGuard } from '@/hooks/useAuthGuard'
 import { useUIStore } from '@/store/ui'
@@ -23,6 +23,8 @@ export default function PostDetailClient() {
   const [loading, setLoading] = useState(true)
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
+  const [isFavorited, setIsFavorited] = useState(false)
+  const [favoriteCount, setFavoriteCount] = useState(0)
   const [heartBeat, setHeartBeat] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [comments, setComments] = useState<Comment[]>([])
@@ -43,8 +45,13 @@ export default function PostDetailClient() {
         if (cancelled) return
         setPost(res.post)
         setLikeCount(res.post.like_count)
+        setFavoriteCount(res.post.favorite_count ?? 0)
         setComments(res.comments)
         setIsLiked(false) // TODO: check if current user liked
+        // 异步检查是否已收藏
+        checkPostFavorited(postId).then((fav) => {
+          if (!cancelled) setIsFavorited(fav)
+        })
       } catch (err: unknown) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : '加载失败'
@@ -76,6 +83,19 @@ export default function PostDetailClient() {
         setHeartBeat(true)
         setTimeout(() => setHeartBeat(false), 600)
       }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '操作失败'
+      addToast('error', msg)
+    }
+  }
+
+  // 收藏 → Supabase
+  const handleToggleFavorite = async () => {
+    try {
+      const res = await toggleFavoriteApi(postId)
+      setIsFavorited(res.favorited)
+      setFavoriteCount(res.favorite_count)
+      addToast('success', res.favorited ? '已收藏' : '已取消收藏')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '操作失败'
       addToast('error', msg)
@@ -238,19 +258,44 @@ export default function PostDetailClient() {
             <p className="text-body text-gray-600 leading-relaxed whitespace-pre-wrap">{post.content}</p>
           </motion.div>
 
-          {/* Like Button */}
-          <motion.div className="mt-4 flex justify-center" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
+          {/* Like + Favorite Buttons */}
+          <motion.div className="mt-4 flex items-center justify-center gap-3" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
             <motion.button
               onClick={() => guard(handleToggleLike, '点赞')}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.92 }}
               aria-label={isLiked ? '取消点赞' : '点赞'}
-              className={`flex items-center gap-2 px-8 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-card`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-colors duration-200 ${isLiked ? 'bg-coral-50 border-2 border-coral-200' : 'bg-white border-2 border-gray-100'} shadow-card`}
             >
               <motion.span animate={heartBeat ? heartbeatKeyframes : { scale: 1 }} transition={heartbeatTransition} className="text-xl">
                 {isLiked ? '❤️' : '🤍'}
               </motion.span>
               <motion.span key={likeCount} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className={`text-sm font-semibold font-num ${isLiked ? 'text-coral-500' : 'text-gray-400'}`}>
                 {likeCount > 999 ? `${(likeCount / 1000).toFixed(1)}k` : likeCount}
+              </motion.span>
+            </motion.button>
+
+            <motion.button
+              onClick={() => guard(handleToggleFavorite, '收藏')}
+              whileTap={{ scale: 0.92 }}
+              aria-label={isFavorited ? '取消收藏' : '收藏'}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full transition-colors duration-200 ${isFavorited ? 'bg-amber-50 border-2 border-amber-200' : 'bg-white border-2 border-gray-100'} shadow-card`}
+            >
+              <motion.svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isFavorited ? '#F59E0B' : 'none'}
+                stroke={isFavorited ? '#F59E0B' : '#9CA3AF'}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                animate={isFavorited ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+              </motion.svg>
+              <motion.span key={favoriteCount} initial={{ y: -8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className={`text-sm font-semibold font-num ${isFavorited ? 'text-amber-500' : 'text-gray-400'}`}>
+                {favoriteCount > 999 ? `${(favoriteCount / 1000).toFixed(1)}k` : favoriteCount}
               </motion.span>
             </motion.button>
           </motion.div>

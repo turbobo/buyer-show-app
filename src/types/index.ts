@@ -24,6 +24,7 @@ export interface Post {
   rating: number
   like_count: number
   comment_count: number
+  favorite_count: number
   status: 'active' | 'hidden' | 'deleted'
   created_at: string
   updated_at: string
@@ -31,6 +32,8 @@ export interface Post {
   user?: Pick<User, 'nickname' | 'avatar_url'>
   /** JOIN 字段：当前用户是否已点赞 */
   is_liked?: boolean
+  /** JOIN 字段：当前用户是否已收藏 */
+  is_favorited?: boolean
 }
 
 /** 评论（对应 comments 表） */
@@ -46,6 +49,14 @@ export interface Comment {
 
 /** 点赞（对应 likes 表） */
 export interface Like {
+  id: string
+  post_id: string
+  user_id: string
+  created_at: string
+}
+
+/** 收藏（对应 favorites 表） */
+export interface Favorite {
   id: string
   post_id: string
   user_id: string

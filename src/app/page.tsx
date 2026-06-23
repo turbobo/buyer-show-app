@@ -91,20 +91,23 @@ export default function HomePage() {
       {/* ── Header (mobile only) ── */}
       <header className="shrink-0 pt-12 pb-3 px-5 md:hidden">
         <div className="flex items-end justify-between">
-          <div>
-            <h1
-              className="text-3xl font-extrabold tracking-tight"
-              style={{
-                background: 'linear-gradient(135deg, #FF6B35 0%, #FF8A5C 50%, #FFAB87 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              买家说
-            </h1>
-            <p className="text-xs text-gray-400 mt-0.5 tracking-wide">
-              真实购物体验 · 好物发现社区
-            </p>
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="买家说" width={36} height={36} className="rounded-xl" />
+            <div>
+              <h1
+                className="text-2xl font-extrabold tracking-tight"
+                style={{
+                  background: 'linear-gradient(135deg, #FF6B35 0%, #FF8A5C 50%, #FFAB87 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                买家说
+              </h1>
+              <p className="text-[10px] text-gray-400 tracking-wide">
+                真实购物体验 · 好物发现社区
+              </p>
+            </div>
           </div>
           <motion.button
             whileTap={{ scale: 0.9, rotate: -180 }}

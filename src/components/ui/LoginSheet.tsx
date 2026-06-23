@@ -29,20 +29,23 @@ export default function LoginSheet() {
             onClick={closeLoginSheet}
           />
 
-          {/* Sheet */}
+          {/* Mobile: bottom sheet / Desktop: centered modal */}
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white rounded-t-modal p-6 safe-bottom z-[70]"
+            className="
+              fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white rounded-t-modal p-6 safe-bottom z-[70]
+              md:bottom-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:max-w-[400px] md:rounded-modal md:shadow-modal
+            "
           >
-            {/* Drag indicator */}
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
+            {/* Drag indicator (mobile only) */}
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6 md:hidden" />
 
-            {/* Content */}
+            {/* Logo + Content */}
             <div className="flex flex-col items-center mb-6">
-              <span className="text-3xl mb-3">👤</span>
+              <img src="/logo.png" alt="买家说" width={48} height={48} className="rounded-2xl mb-3" />
               <h3 className="text-h2 text-gray-800">登录后{loginSheet.reason}</h3>
               <p className="text-caption text-gray-400 mt-1">
                 注册/登录后可点赞、评论、发布内容

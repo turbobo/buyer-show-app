@@ -70,6 +70,18 @@ CREATE TABLE IF NOT EXISTS likes (
   UNIQUE(post_id, user_id)
 );
 
+-- 4.1 收藏表（v2 增量）
+CREATE TABLE IF NOT EXISTS favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, post_id)
+);
+
+-- 帖子增加收藏计数（v2 增量）
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS favorite_count INT NOT NULL DEFAULT 0;
+
 -- ─── 5. 关注表 ───
 CREATE TABLE IF NOT EXISTS follows (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -106,6 +118,10 @@ CREATE INDEX idx_comments_user_id ON comments (user_id);
 -- 点赞：按帖子 + 用户
 CREATE INDEX idx_likes_post_id ON likes (post_id);
 CREATE INDEX idx_likes_user_id ON likes (user_id);
+
+-- 收藏：按用户 + 时间 / 按帖子反查
+CREATE INDEX idx_favorites_user ON favorites (user_id, created_at DESC);
+CREATE INDEX idx_favorites_post ON favorites (post_id);
 
 -- 关注：双向查询
 CREATE INDEX idx_follows_follower ON follows (follower_id);
@@ -197,6 +213,32 @@ CREATE TRIGGER on_like_deleted
   AFTER DELETE ON likes
   FOR EACH ROW EXECUTE FUNCTION decrement_like_count();
 
+-- 收藏 → posts.favorite_count +1
+CREATE OR REPLACE FUNCTION increment_favorite_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET favorite_count = favorite_count + 1, updated_at = NOW() WHERE id = NEW.post_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_favorite_created
+  AFTER INSERT ON favorites
+  FOR EACH ROW EXECUTE FUNCTION increment_favorite_count();
+
+-- 取消收藏 → posts.favorite_count -1
+CREATE OR REPLACE FUNCTION decrement_favorite_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET favorite_count = GREATEST(favorite_count - 1, 0), updated_at = NOW() WHERE id = OLD.post_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_favorite_deleted
+  AFTER DELETE ON favorites
+  FOR EACH ROW EXECUTE FUNCTION decrement_favorite_count();
+
 -- 关注 → 双向计数
 CREATE OR REPLACE function increment_follow_counts()
 RETURNS TRIGGER AS $$
@@ -256,6 +298,11 @@ CREATE POLICY "comments_delete_own" ON comments FOR DELETE USING (auth.uid() = u
 CREATE POLICY "likes_select_all" ON likes FOR SELECT USING (true);
 CREATE POLICY "likes_insert_own" ON likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "likes_delete_own" ON likes FOR DELETE USING (auth.uid() = user_id);
+
+-- favorites：所有人可读（展示被收藏次数），登录用户操作自己的
+CREATE POLICY "favorites_select_all" ON favorites FOR SELECT USING (true);
+CREATE POLICY "favorites_insert_own" ON favorites FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "favorites_delete_own" ON favorites FOR DELETE USING (auth.uid() = user_id);
 
 -- follows：所有人可读，本人可操作
 CREATE POLICY "follows_select_all" ON follows FOR SELECT USING (true);

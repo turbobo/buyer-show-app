@@ -4,8 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HOT_TAGS } from '@/lib/mock-data'
 import { searchPosts } from '@/services/post'
+import { fetchUserFavoriteTagSet, toggleTagFavorite } from '@/services/favorite'
 import { supabase } from '@/lib/supabase'
 import { useUserStore } from '@/store/user'
+import { useAuthGuard } from '@/hooks/useAuthGuard'
 import PostCard from '@/components/PostCard'
 import type { Post } from '@/types'
 
@@ -21,11 +23,27 @@ export default function SearchPage() {
   const [totalCount, setTotalCount] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const isLoggedIn = useUserStore((s) => s.isLoggedIn)
+  const user = useUserStore((s) => s.user)
+  const { guard } = useAuthGuard()
+  const [favoritedTags, setFavoritedTags] = useState<Set<string>>(new Set())
 
   // Auto-focus on mount
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  // Load favorite tag set whenever auth state flips
+  useEffect(() => {
+    if (!user) {
+      setFavoritedTags(new Set())
+      return
+    }
+    let cancelled = false
+    fetchUserFavoriteTagSet(user.id)
+      .then((s) => { if (!cancelled) setFavoritedTags(s) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [user])
 
   // Load search history from Supabase
   useEffect(() => {
@@ -77,6 +95,19 @@ export default function SearchPage() {
   const handleTagClick = (tag: string) => {
     setQuery(tag)
     inputRef.current?.focus()
+  }
+
+  const handleToggleTagFavorite = async (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    guard(async () => {
+      const res = await toggleTagFavorite(tag)
+      setFavoritedTags((prev) => {
+        const next = new Set(prev)
+        if (res.favorited) next.add(tag)
+        else next.delete(tag)
+        return next
+      })
+    }, '收藏标签')
   }
 
   const commitSearch = useCallback(async () => {
@@ -185,19 +216,49 @@ export default function SearchPage() {
                 <h2 className="text-h2 text-gray-800">热门搜索</h2>
               </div>
               <div className="flex flex-wrap gap-2.5">
-                {HOT_TAGS.map((tag, i) => (
-                  <motion.button
-                    key={tag}
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.1 + i * 0.04 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => handleTagClick(tag)}
-                    className="relative px-4 py-2.5 rounded-2xl text-body font-medium bg-white text-gray-600 border border-gray-100 shadow-card hover:border-coral-200 hover:text-coral-500 transition-all duration-200"
-                  >
-                    <span className="text-coral-400 mr-1">#</span>{tag}
-                  </motion.button>
-                ))}
+                {HOT_TAGS.map((tag, i) => {
+                  const isFav = favoritedTags.has(tag)
+                  return (
+                    <motion.div
+                      key={tag}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 + i * 0.04 }}
+                      className="inline-flex items-center gap-1"
+                    >
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => handleTagClick(tag)}
+                        className="px-4 py-2.5 rounded-2xl text-body font-medium bg-white text-gray-600 border border-gray-100 shadow-card hover:border-coral-200 hover:text-coral-500 transition-all duration-200"
+                      >
+                        <span className="text-coral-400 mr-1">#</span>{tag}
+                      </motion.button>
+                      <motion.button
+                        whileTap={{ scale: 0.75 }}
+                        onClick={(e) => handleToggleTagFavorite(tag, e)}
+                        aria-label={isFav ? `取消收藏标签 ${tag}` : `收藏标签 ${tag}`}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center border shadow-card transition-colors ${
+                          isFav
+                            ? 'bg-coral-50 border-coral-200 text-coral-500'
+                            : 'bg-white border-gray-100 text-gray-300 hover:text-coral-400'
+                        }`}
+                      >
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill={isFav ? 'currentColor' : 'none'}
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </motion.button>
+                    </motion.div>
+                  )
+                })}
               </div>
             </motion.section>
 

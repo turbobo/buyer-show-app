@@ -1,7 +1,17 @@
+'use client'
+
+import { useState } from 'react'
+import { motion } from 'framer-motion'
 import type { Comment } from '@/types'
+import { toggleCommentFavorite } from '@/services/favorite'
+import { useAuthGuard } from '@/hooks/useAuthGuard'
 
 interface Props {
   comment: Comment
+  /** 初始是否已被当前用户收藏（由外层列表一次性注入） */
+  initialFavorited?: boolean
+  /** 收藏变更回调（用于外部计数同步） */
+  onToggle?: (favorited: boolean) => void
 }
 
 function formatTime(dateStr: string): string {
@@ -18,7 +28,20 @@ function formatTime(dateStr: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-export default function CommentItem({ comment }: Props) {
+export default function CommentItem({ comment, initialFavorited, onToggle }: Props) {
+  const { guard } = useAuthGuard()
+  const [favorited, setFavorited] = useState(initialFavorited ?? false)
+  const [count, setCount] = useState(comment.favorite_count ?? 0)
+
+  const handleFavorite = async () => {
+    guard(async () => {
+      const res = await toggleCommentFavorite(comment.id)
+      setFavorited(res.favorited)
+      setCount(res.favorite_count)
+      onToggle?.(res.favorited)
+    }, '收藏评论')
+  }
+
   return (
     <div className="flex gap-3 py-3">
       <img
@@ -35,6 +58,29 @@ export default function CommentItem({ comment }: Props) {
         </div>
         <p className="text-sm text-gray-600 mt-1 leading-relaxed">{comment.content}</p>
       </div>
+
+      <motion.button
+        whileTap={{ scale: 0.82 }}
+        onClick={handleFavorite}
+        aria-label={favorited ? '取消收藏评论' : '收藏评论'}
+        className={`shrink-0 self-start mt-1 flex items-center gap-1 px-1.5 py-1 rounded-full transition-colors ${
+          favorited ? 'text-coral-500' : 'text-gray-300 hover:text-gray-400'
+        }`}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill={favorited ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+        </svg>
+        {count > 0 && <span className="text-[11px] font-num">{count}</span>}
+      </motion.button>
     </div>
   )
 }

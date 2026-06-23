@@ -43,8 +43,19 @@ export interface Comment {
   user_id: string
   content: string
   created_at: string
+  favorite_count?: number
   /** JOIN 字段：评论者信息 */
   user?: Pick<User, 'nickname' | 'avatar_url'>
+  /** JOIN 字段：当前用户是否已收藏 */
+  is_favorited?: boolean
+}
+
+/** 收藏标签项（favorite_tags 表） */
+export interface FavoriteTag {
+  id: string
+  user_id: string
+  tag: string
+  created_at: string
 }
 
 /** 点赞（对应 likes 表） */

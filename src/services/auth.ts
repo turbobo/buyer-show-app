@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { useUserStore } from '@/store/user'
 import type { User } from '@/types'
-import { fetchCurrentUser } from '@/services/post'
+import { fetchCurrentUser } from '@/services/user'
 
 /** 匿名登录（开发阶段使用） */
 export async function signInAnonymously(): Promise<User> {

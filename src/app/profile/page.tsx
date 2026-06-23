@@ -7,6 +7,8 @@ import PostCard from '@/components/PostCard'
 import { useUserStore } from '@/store/user'
 import { supabase } from '@/lib/supabase'
 import { openLoginSheet, quickLogout } from '@/lib/auth-helpers'
+import { useUIStore } from '@/store/ui'
+import { deleteAccount } from '@/services/user'
 import type { Post } from '@/types'
 
 const MENU_ITEMS: Array<{
@@ -15,6 +17,17 @@ const MENU_ITEMS: Array<{
   icon: React.ReactNode
   color: string
 }> = [
+  {
+    label: '编辑资料',
+    href: '/profile/edit',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+    color: 'from-pink-400 to-rose-400',
+  },
   {
     label: '我的发布',
     href: '/profile/posts',
@@ -181,7 +194,8 @@ export default function ProfilePage() {
                   </h2>
                   <motion.button
                     whileTap={{ scale: 0.88 }}
-                    onClick={() => showToast('编辑资料 - 功能开发中')}
+                    onClick={() => router.push('/profile/edit')}
+                    aria-label="编辑资料"
                     className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
@@ -320,6 +334,40 @@ export default function ProfilePage() {
               >
                 退出登录
               </motion.button>
+            </motion.div>
+
+            {/* ── Delete Account ── */}
+            <motion.div
+              custom={4}
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="mb-4"
+            >
+              <button
+                onClick={() => {
+                  useUIStore.getState().openModal({
+                    title: '注销账号',
+                    description: '注销后帖子将被隐藏、昵称匿名化，且无法恢复。确定继续吗？',
+                    confirmText: '确认注销',
+                    confirmDanger: true,
+                    onConfirm: async () => {
+                      try {
+                        await deleteAccount()
+                        useUserStore.getState().logout()
+                        useUIStore.getState().addToast('success', '账号已注销')
+                        router.replace('/profile')
+                      } catch (err: unknown) {
+                        const msg = err instanceof Error ? err.message : '注销失败'
+                        useUIStore.getState().addToast('error', msg)
+                      }
+                    },
+                  })
+                }}
+                className="w-full text-center text-xs text-gray-300 hover:text-coral-500 transition-colors py-2"
+              >
+                注销账号
+              </button>
             </motion.div>
           </motion.div>
         )}

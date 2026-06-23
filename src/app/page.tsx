@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HOT_TAGS } from '@/lib/mock-data'
 import { fetchPosts } from '@/services/post'
-import { useAuthInit } from '@/hooks/useAuthInit'
+import { useUserStore } from '@/store/user'
 import { seedIfEmpty } from '@/lib/seed'
 import PostCard from '@/components/PostCard'
 import Skeleton from '@/components/Skeleton'
@@ -13,7 +13,7 @@ import type { Post } from '@/types'
 const ALL_TAGS = ['全部', ...HOT_TAGS]
 
 export default function HomePage() {
-  const { ready: authReady } = useAuthInit()
+  const authReady = useUserStore((s) => s.authReady)
   const [activeTag, setActiveTag] = useState('全部')
   const [posts, setPosts] = useState<Post[]>([])
   const [page, setPage] = useState(1)

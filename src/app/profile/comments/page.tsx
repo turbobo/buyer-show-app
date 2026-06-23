@@ -25,11 +25,12 @@ function formatTime(iso: string): string {
 
 export default function MyCommentsPage() {
   const router = useRouter()
-  const { user, isLoggedIn } = useUserStore()
+  const { user, isLoggedIn, authReady } = useUserStore()
   const [comments, setComments] = useState<CommentWithPost[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!authReady) return
     if (!isLoggedIn || !user) {
       router.replace('/profile')
       return
@@ -38,7 +39,7 @@ export default function MyCommentsPage() {
       .then(setComments)
       .catch((e) => console.error(e))
       .finally(() => setLoading(false))
-  }, [isLoggedIn, user, router])
+  }, [authReady, isLoggedIn, user, router])
 
   return (
     <ProfileSubPageLayout

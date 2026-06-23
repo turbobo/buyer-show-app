@@ -10,11 +10,12 @@ import type { Post } from '@/types'
 
 export default function MyFavoritesPage() {
   const router = useRouter()
-  const { user, isLoggedIn } = useUserStore()
+  const { user, isLoggedIn, authReady } = useUserStore()
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!authReady) return
     if (!isLoggedIn || !user) {
       router.replace('/profile')
       return
@@ -23,7 +24,7 @@ export default function MyFavoritesPage() {
       .then(setPosts)
       .catch((e) => console.error(e))
       .finally(() => setLoading(false))
-  }, [isLoggedIn, user, router])
+  }, [authReady, isLoggedIn, user, router])
 
   return (
     <ProfileSubPageLayout

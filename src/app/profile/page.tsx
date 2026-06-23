@@ -70,7 +70,7 @@ const sectionVariants = {
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, isLoggedIn } = useUserStore()
+  const { user, isLoggedIn, authReady } = useUserStore()
   const [toast, setToast] = useState<string | null>(null)
   const [userPosts, setUserPosts] = useState<Post[]>([])
 
@@ -120,7 +120,14 @@ export default function ProfilePage() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
         <div className="relative px-5 pt-14 pb-8">
-          {!isLoggedIn ? (
+          {!authReady ? (
+            /* ── Rehydrating Skeleton ── */
+            <div className="flex flex-col items-center text-center py-8 animate-pulse">
+              <div className="w-20 h-20 rounded-full bg-white/20 mb-4" />
+              <div className="h-5 w-24 rounded bg-white/20 mb-2" />
+              <div className="h-3 w-36 rounded bg-white/15" />
+            </div>
+          ) : !isLoggedIn ? (
             /* ── Login Prompt ── */
             <motion.div
               initial={{ opacity: 0, y: 20 }}

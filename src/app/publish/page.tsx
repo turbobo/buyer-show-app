@@ -22,7 +22,7 @@ const sectionVariants = {
 
 export default function PublishPage() {
   const router = useRouter()
-  const { user, isLoggedIn } = useUserStore()
+  const { user, isLoggedIn, authReady } = useUserStore()
 
   const [images, setImages] = useState<string[]>([])
   const [title, setTitle] = useState('')
@@ -35,12 +35,13 @@ export default function PublishPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  // Check login on mount
+  // Check login on mount（等 session 恢复完成后再判断）
   useEffect(() => {
+    if (!authReady) return
     if (!isLoggedIn) {
       setShowLoginPrompt(true)
     }
-  }, [isLoggedIn])
+  }, [authReady, isLoggedIn])
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>

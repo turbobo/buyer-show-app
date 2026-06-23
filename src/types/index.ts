@@ -7,6 +7,10 @@ export interface User {
   post_count: number
   follower_count: number
   following_count: number
+  /** 管理员模块新增；DB 默认 'user'；mock 数据可能缺失 */
+  role?: 'user' | 'admin'
+  /** 管理员模块新增；DB 默认 'active'；mock 数据可能缺失 */
+  status?: 'active' | 'banned' | 'deleted'
   created_at: string
   updated_at: string
 }

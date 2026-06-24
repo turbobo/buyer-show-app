@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { HOT_TAGS } from '@/lib/mock-data'
 import { fetchPosts } from '@/services/post'
 import { useUserStore } from '@/store/user'
+import { useUIStore } from '@/store/ui'
 import { seedIfEmpty } from '@/lib/seed'
 import PostCard from '@/components/PostCard'
 import Skeleton from '@/components/Skeleton'
@@ -14,6 +15,7 @@ const ALL_TAGS = ['全部', ...HOT_TAGS]
 
 export default function HomePage() {
   const authReady = useUserStore((s) => s.authReady)
+  const addToast = useUIStore((s) => s.addToast)
   const [activeTag, setActiveTag] = useState('全部')
   const [posts, setPosts] = useState<Post[]>([])
   const [page, setPage] = useState(1)
@@ -23,6 +25,7 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const loadingMoreRef = useRef(false)
 
   // 加载帖子数据
   const loadPosts = useCallback(async (p: number, tag: string, append = false) => {
@@ -35,8 +38,8 @@ export default function HomePage() {
       }
       setHasMore(res.hasMore)
       setPage(p)
-    } catch (err) {
-      console.error('[home] loadPosts error:', err)
+    } catch (err: unknown) {
+      addToast('error', err instanceof Error ? err.message : '加载失败')
     }
   }, [])
 
@@ -72,13 +75,17 @@ export default function HomePage() {
   // 触底加载更多
   const handleScroll = useCallback(() => {
     const el = scrollRef.current
-    if (!el || loadingMore || !hasMore) return
+    if (!el || loadingMoreRef.current || !hasMore) return
     const { scrollTop, scrollHeight, clientHeight } = el
     if (scrollTop + clientHeight >= scrollHeight - 80) {
+      loadingMoreRef.current = true
       setLoadingMore(true)
-      loadPosts(page + 1, activeTag, true).finally(() => setLoadingMore(false))
+      loadPosts(page + 1, activeTag, true).finally(() => {
+        loadingMoreRef.current = false
+        setLoadingMore(false)
+      })
     }
-  }, [loadingMore, hasMore, page, activeTag, loadPosts])
+  }, [hasMore, page, activeTag, loadPosts])
 
   const onScrollUI = useCallback(() => {
     handleScroll()

@@ -195,6 +195,85 @@ src/
 
 ---
 
+## 数据库迁移规范（Supabase migration）
+
+所有 schema 变更必须走 `supabase/migration-vN-xxx.sql` 增量迁移，禁止直接在 Dashboard 改表结构。
+
+### 命名与版本
+
+- 文件名：`migration-vN-xxx.sql`，N 递增（当前到 v11），xxx 为 kebab-case 描述
+- 每次新增版本必须同步：
+  - `技术方案文档.md` §7.N 加章节
+  - `产品设计文档.md` 进度条 / 已完成清单
+  - `技术方案文档.md` 顶部 `supabase/` 目录注释的版本范围（如 `v1-v11`）
+
+### 文件头注释（强制）
+
+每个 migration 文件开头必须包含：
+
+```sql
+-- =============================================
+-- 买家说 — 增量迁移 vN：标题
+-- 执行方式：Supabase Dashboard → SQL Editor → 整段粘贴
+-- 前置依赖：必须先跑过 migration-vX-xxx.sql / ...
+--
+-- 新增/修复内容：
+--   - 第 1 项
+--   - 第 2 项
+-- =============================================
+```
+
+### SMALLINT + 常量（禁止 TEXT + CHECK）
+
+所有 status / role / flag 字段必须用 `SMALLINT` + 默认值，语义由 `src/lib/constants.ts` 的 `as const` 对象维护。已落地常量：
+
+| 表.字段 | 常量 | 取值 |
+|---|---|---|
+| `posts.status` | `POST_STATUS` | 0=ACTIVE / 1=HIDDEN / 2=DELETED |
+| `profiles.role` | `USER_ROLE` | 0=USER / 1=ADMIN |
+| `profiles.status` | `USER_STATUS` | 0=ACTIVE / 1=BANNED / 2=DELETED |
+| `tags.status` | `TAG_STATUS` | 0=ACTIVE / 1=ARCHIVED / 2=DELETED |
+
+**禁止**：`TEXT + CHECK IN ('a','b','c')` 模式。
+
+### 迁移五步法（字段类型变更时）
+
+1. 加临时列（`ADD COLUMN IF NOT EXISTS xxx_code SMALLINT`）
+2. 数据迁移（`UPDATE ... SET xxx_code = 0/1/2 WHERE xxx = 'a'/'b'/'c'`）
+3. **DROP 所有依赖**（`DROP POLICY` / `DROP INDEX` / `DROP CONSTRAINT` / `DROP FUNCTION`），按 `\d+ table` 输出集中处理
+4. DROP 旧列 + RENAME 新列
+5. 重建索引 / RLS / SECURITY DEFINER 函数（函数体字面量必须同步改整数）
+
+### DROP 顺序安全（PG 2BP01 规避）
+
+- `DROP COLUMN` 报 `2BP01: cannot drop column ... because other objects depend on it`：必须先用 `\d+ table` 列出所有依赖，集中 DROP 完再 DROP 目标列
+- `DROP FUNCTION` 报 `2BP01`：必须**先 DROP 所有引用它的 RLS 策略（含跨表）**，再 DROP 函数
+  - 典型案例：v7 中 `tags_admin_all` 引用 `is_admin(uuid)`，必须先 DROP `tags_admin_all` 才能 DROP `is_admin`
+
+### CREATE INDEX 与 Supabase SQL Editor（**关键教训**）
+
+- **Supabase SQL Editor 对所有输入（含单条语句）都会自动包在事务块内**
+- `CREATE INDEX CONCURRENTLY` 在事务块内必报 `25001: CREATE INDEX CONCURRENTLY cannot run inside a transaction block`
+- **整段粘贴的 migration 脚本禁用 `CONCURRENTLY`**，改用普通 `CREATE INDEX IF NOT EXISTS`
+  - 当前项目所有表数据量小（< 10k 行），普通索引几秒搞定，锁表对业务无影响
+  - 如未来表大到百万级，改用 `psql -c` 跑 `CONCURRENTLY`
+- v9 / v10 之所以能跑 `CONCURRENTLY`，是因为用户**逐条分开执行**每条 CREATE INDEX（每条独立事务）；整段粘贴仍会 25001
+- 索引幂等写法：先 `DROP INDEX IF EXISTS xxx`，再 `CREATE INDEX IF NOT EXISTS xxx`（避免同名冲突导致静默跳过）
+
+### SECURITY DEFINER 函数规范
+
+- 必须 `is_admin(auth.uid())` 校验 caller
+- 禁止自我操作（`caller = target_uid` 必须 `RAISE EXCEPTION`）
+- 必须有 `has_any_admin()` 自举路径（首次部署用）
+- 函数体里的字符串字面量必须随字段类型同步改为整数
+- `CREATE OR REPLACE` 不能改签名，签名变更时必须 `DROP FUNCTION` 再 `CREATE FUNCTION`
+
+### 末尾 ANALYZE
+
+涉及大量数据改动 / 新建索引的 migration，末尾加 `ANALYZE table_name;` 让查询计划器立即看到新统计。
+
+---
+
 ## 性能规则
 
 - 首屏 JS < 150KB (gzip)，单路由 < 50KB
@@ -241,6 +320,7 @@ src/
 8. 手机端和 PC 端是否都正常显示
 9. 错误是否已处理（不吞错误）
 10. 是否有重复代码（DRY）
+11. DB 迁移脚本是否用 SMALLINT + 常量、是否遵循五步法、是否整段粘贴禁用 `CONCURRENTLY`、是否同步 `技术方案文档.md` §7.N + `产品设计文档.md` 进度条
 
 ---
 

@@ -159,6 +159,7 @@ chore(scope): 描述
 | `grid + divide-x + p-*` 分割线被截断 | cell 用 `py-*` + 外层 `overflow-hidden` |
 | `useSearchParams` hydration | 包在 `<Suspense>` 内 |
 | `Math.random()` hydration mismatch | 用固定数组 index 替代 |
+| `CREATE INDEX CONCURRENTLY` 在 Supabase SQL Editor 整段粘贴报 25001 | SQL Editor 对所有输入都包事务，CONCURRENTLY 必死。改用普通 `CREATE INDEX`（小表锁表可忽略）；大表用 `psql -c` 跑 |
 
 ## 安全
 

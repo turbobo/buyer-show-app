@@ -24,10 +24,10 @@ export default function TopNav() {
     >
       <div className="flex items-center justify-between w-full md:max-w-3xl lg:max-w-5xl xl:max-w-6xl px-5 md:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="买家说首页">
+        <div className="flex items-center gap-2 shrink-0">
           {isDetail && (
             <button
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); smartBack(router) }}
+              onClick={() => smartBack(router)}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center mr-2 transition-colors"
               aria-label="返回上一页"
             >
@@ -36,18 +36,20 @@ export default function TopNav() {
               </svg>
             </button>
           )}
-          <img src="/logo.svg" alt="买家说" width={32} height={32} loading="lazy" />
-          <span className="text-xl font-extrabold tracking-tight" style={{
-            background: 'linear-gradient(135deg, #FF6B35 0%, #FF8A5C 50%, #FFAB87 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}>
-            买家说
-          </span>
-          <span className="text-tiny text-gray-400 tracking-wide hidden lg:inline">
-            真实购物体验 · 好物发现社区
-          </span>
-        </Link>
+          <Link href="/" aria-label="买家说首页" className="flex items-center gap-2">
+            <img src="/logo.svg" alt="买家说" width={32} height={32} loading="lazy" />
+            <span className="text-xl font-extrabold tracking-tight" style={{
+              background: 'linear-gradient(135deg, #FF6B35 0%, #FF8A5C 50%, #FFAB87 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              买家说
+            </span>
+            <span className="text-tiny text-gray-400 tracking-wide hidden lg:inline">
+              真实购物体验 · 好物发现社区
+            </span>
+          </Link>
+        </div>
 
         {/* Nav links (hidden on detail pages) */}
         {!isDetail && (

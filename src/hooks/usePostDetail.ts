@@ -4,6 +4,7 @@ import {
   fetchPostDetail,
   toggleLike as toggleLikeApi,
   toggleFavorite as toggleFavoriteApi,
+  checkPostLiked,
   checkPostFavorited,
 } from '@/services/post'
 import { addComment as addCommentApi } from '@/services/comment'
@@ -46,6 +47,9 @@ export function usePostDetail() {
         setFavoriteCount(res.post.favorite_count ?? 0)
         setComments(res.comments)
         setIsLiked(false)
+        checkPostLiked(postId).then((liked) => {
+          if (!cancelled) setIsLiked(liked)
+        })
         checkPostFavorited(postId).then((fav) => {
           if (!cancelled) setIsFavorited(fav)
         })

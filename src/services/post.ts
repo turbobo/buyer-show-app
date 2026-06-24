@@ -181,6 +181,21 @@ export async function toggleLike(postId: string): Promise<{ liked: boolean; like
   return { liked: !existing, like_count: post?.like_count ?? 0 }
 }
 
+/** 检查当前用户是否已点赞帖子 */
+export async function checkPostLiked(postId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+
+  const { data } = await supabase
+    .from('likes')
+    .select('id')
+    .eq('post_id', postId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  return Boolean(data)
+}
+
 // ─── 收藏 ───
 
 /** 切换收藏 */

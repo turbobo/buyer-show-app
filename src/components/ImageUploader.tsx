@@ -13,24 +13,31 @@ export default function ImageUploader({ images, onChange, max = 9 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [previewIdx, setPreviewIdx] = useState<number | null>(null)
 
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files) return
     const remaining = max - images.length
     const selected = Array.from(files).slice(0, remaining)
 
-    selected.forEach((file) => {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          onChange([...images, e.target.result as string])
-        }
-      }
-      reader.readAsDataURL(file)
-    })
+    const results = await Promise.all(
+      selected.map(
+        (file) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (e) => resolve(e.target?.result as string)
+            reader.onerror = () => reject(new Error('读取图片失败'))
+            reader.readAsDataURL(file)
+          }),
+      ),
+    )
+    onChange([...images, ...results])
   }
 
   const removeImage = (idx: number) => {
     onChange(images.filter((_, i) => i !== idx))
+    if (previewIdx !== null) {
+      if (idx === previewIdx) setPreviewIdx(null)
+      else if (idx < previewIdx) setPreviewIdx(previewIdx - 1)
+    }
   }
 
   return (
@@ -93,7 +100,7 @@ export default function ImageUploader({ images, onChange, max = 9 }: Props) {
             onClick={() => setPreviewIdx(null)}
           >
             <img
-              src={images[previewIdx]}
+              src={images[previewIdx] ?? ''}
               alt=""
               loading="lazy"
               className="max-w-[90%] max-h-[80vh] object-contain rounded-lg"

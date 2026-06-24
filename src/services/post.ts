@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { POST_STATUS } from '@/lib/constants'
+import { fetchPostComments } from '@/services/comment'
 import type { Post, Comment, PaginatedResponse, CreatePostParams } from '@/types'
 
 const PAGE_SIZE = 20
@@ -52,16 +53,11 @@ export async function fetchPostDetail(postId: string): Promise<{
 
   if (postError || !post) throw new Error('帖子不存在')
 
-  // 评论查询（内联以避免跨 service 依赖）
-  const { data: comments } = await supabase
-    .from('comments')
-    .select('*, user:profiles!comments_user_id_fkey(nickname, avatar_url)')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true })
+  const comments = await fetchPostComments(postId)
 
   return {
     post: post as Post,
-    comments: (comments ?? []) as Comment[],
+    comments,
   }
 }
 

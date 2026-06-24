@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '@/store/ui'
 import { useUserStore } from '@/store/user'
@@ -12,6 +12,7 @@ type AuthMode = 'login' | 'register'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const addToast = useUIStore((s) => s.addToast)
   const setUser = useUserStore((s) => s.setUser)
 
@@ -54,7 +55,8 @@ export default function LoginPage() {
       }
 
       addToast('success', '登录成功')
-      setTimeout(() => router.back(), 500)
+      const redirect = searchParams.get('redirect')
+      setTimeout(() => router.replace(redirect || '/'), 500)
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : '登录失败'
       if (message.includes('Invalid login credentials')) {

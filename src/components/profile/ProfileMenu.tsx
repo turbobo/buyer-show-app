@@ -134,7 +134,7 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
         animate="visible"
         className="bg-white rounded-2xl shadow-sm p-5 mb-5"
       >
-        <div className="flex items-center justify-around">
+        <div className="grid grid-cols-3">
           {[
             { value: user.post_count, label: '发布' },
             { value: user.follower_count, label: '粉丝' },
@@ -145,9 +145,9 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08 }}
-              className="flex flex-col items-center"
+              className="flex flex-col items-center justify-center"
             >
-              <span className="text-xl font-bold text-gray-800">
+              <span className="text-xl font-bold text-gray-800 font-num tabular-nums">
                 {stat.value >= 1000
                   ? `${(stat.value / 1000).toFixed(1)}k`
                   : stat.value}
@@ -171,17 +171,26 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
             key={item.label}
             whileTap={{ backgroundColor: '#f9f5f2' }}
             onClick={() => onMenuClick(item.href, item.label)}
-            className={`w-full flex items-center gap-4 px-5 py-4 text-left transition-colors ${
+            className={`w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors ${
               i < items.length - 1 ? 'border-b border-gray-50' : ''
             }`}
           >
-            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
+            <div className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
               {item.icon}
             </div>
-            <span className="flex-1 text-sm font-medium text-gray-700">
+            <span className="flex-1 min-w-0 text-sm font-medium text-gray-700 truncate">
               {item.label}
             </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round">
+            <svg
+              className="shrink-0 text-gray-300"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </motion.button>

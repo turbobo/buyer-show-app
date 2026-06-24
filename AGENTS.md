@@ -272,6 +272,26 @@ src/
 
 涉及大量数据改动 / 新建索引的 migration，末尾加 `ANALYZE table_name;` 让查询计划器立即看到新统计。
 
+### 性能与超时（statement_timeout 教训）
+
+- Supabase 默认 `statement_timeout` = 8-30s，超过自动报 `canceling statement due to statement timeout`
+- **最常见的三类超时根因**：
+  1. **RLS 策略里 `has_any_admin()` / `is_admin()` 每行触发且未走 partial index**
+     - 修复：加复合 partial index，如 `CREATE INDEX idx_profiles_admin ON profiles (id) WHERE role = 1 AND status = 0;`
+     - 不要依赖 PostgreSQL 自动合并多个 partial index
+  2. **重型触发器连环触发**（如 `sync_tags_dict` 在批量 UPDATE 时连环 INSERT）
+     - 修复：迁移脚本里 `ALTER TABLE ... DISABLE TRIGGER xxx;` → 数据迁移 → `ENABLE TRIGGER`
+  3. **缺索引导致 Seq Scan**（如 `posts` 没建 `idx_posts_status_created`）
+     - 修复：按 v9 / v10 索引审计流程排查
+- **诊断流程**（接到超时报告时立即跑）：
+  1. `SHOW statement_timeout;` 看当前配置
+  2. `EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM posts;` 找 Seq Scan / SubPlan
+  3. `pg_indexes` 检查索引是否齐全
+  4. `pg_policy` 检查 RLS 策略里的函数调用
+  5. `pg_trigger` 检查重型触发器
+- **应急**：`SET statement_timeout = '60s';`（会话级）先让接口通，再根治
+- **禁止**：在 RLS 策略里直接写子查询（每行都会跑），必须抽成 `STABLE SECURITY DEFINER` 函数 + 配套 partial index
+
 ---
 
 ## 性能规则

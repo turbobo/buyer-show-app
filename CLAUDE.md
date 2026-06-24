@@ -160,6 +160,7 @@ chore(scope): 描述
 | `useSearchParams` hydration | 包在 `<Suspense>` 内 |
 | `Math.random()` hydration mismatch | 用固定数组 index 替代 |
 | `CREATE INDEX CONCURRENTLY` 在 Supabase SQL Editor 整段粘贴报 25001 | SQL Editor 对所有输入都包事务，CONCURRENTLY 必死。改用普通 `CREATE INDEX`（小表锁表可忽略）；大表用 `psql -c` 跑 |
+| Supabase 报 `canceling statement due to statement timeout` | 三类根因：(1) RLS 策略函数每行触发未走 partial index → 加复合 partial index；(2) 重型触发器连环触发 → 迁移时 DISABLE TRIGGER；(3) 缺索引 Seq Scan → 按 v9/v10 流程排查。应急 `SET statement_timeout = '60s';` |
 
 ## 安全
 

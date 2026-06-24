@@ -63,11 +63,11 @@ export async function fetchPostDetail(postId: string): Promise<{
 }
 
 /** 发布帖子 */
-export async function createPost(params: CreatePostParams): Promise<Post> {
+export async function createPost(params: CreatePostParams): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('请先登录')
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('posts')
     .insert({
       user_id: user.id,
@@ -79,11 +79,8 @@ export async function createPost(params: CreatePostParams): Promise<Post> {
       price: params.price ?? '',
       rating: params.rating ?? 5,
     })
-    .select()
-    .single()
 
   if (error) throw new Error(`发布失败: ${error.message}`)
-  return data as Post
 }
 
 /** 更新帖子（作者本人才可修改） */

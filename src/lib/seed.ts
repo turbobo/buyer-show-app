@@ -8,11 +8,13 @@ export async function seedIfEmpty(): Promise<void> {
   if (process.env.NODE_ENV !== 'development') return
 
   // 检查是否已有数据
-  const { count } = await supabase
+  const { data: existing } = await supabase
     .from('posts')
-    .select('*', { count: 'exact', head: true })
+    .select('id')
+    .eq('status', 0)
+    .limit(1)
 
-  if ((count ?? 0) > 0) return
+  if (existing && existing.length > 0) return
 
   // 获取当前用户
   const { data: { user } } = await supabase.auth.getUser()

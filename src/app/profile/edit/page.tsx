@@ -6,9 +6,8 @@ import { motion } from 'framer-motion'
 import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
 import { updateProfile, isNicknameAvailable } from '@/services/user'
+import { compressAvatar } from '@/lib/image-utils'
 import ProfileSubPageLayout from '@/components/layout/ProfileSubPageLayout'
-
-const MAX_AVATAR_BYTES = 500 * 1024 // 500KB（base64 兜底，Storage 上线后切回链接）
 
 export default function ProfileEditPage() {
   const router = useRouter()
@@ -70,16 +69,12 @@ export default function ProfileEditPage() {
       addToast('error', '请选择图片文件')
       return
     }
-    if (file.size > MAX_AVATAR_BYTES) {
-      addToast('error', '头像不超过 500KB')
-      return
+    try {
+      const dataUrl = await compressAvatar(file)
+      setAvatarUrl(dataUrl)
+    } catch {
+      addToast('error', '图片处理失败，请换一张试试')
     }
-    // Storage 桶策略未通过，先用 base64 占位（小尺寸头像可接受）
-    const reader = new FileReader()
-    reader.onload = () => setAvatarUrl(String(reader.result || ''))
-    reader.onerror = () => addToast('error', '读取图片失败')
-    reader.readAsDataURL(file)
-    // 同一文件再次选择
     e.target.value = ''
   }
 
@@ -164,7 +159,7 @@ export default function ProfileEditPage() {
             onChange={handleFileChange}
           />
           <p className="text-xs text-gray-400 mt-3">
-            头像不超过 500KB（图片上传 Storage 待接入，暂以 base64 兜底）
+            支持任意尺寸图片，自动压缩
           </p>
         </section>
 

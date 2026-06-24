@@ -22,7 +22,7 @@ const sectionVariants = {
 
 export default function PublishPage() {
   const router = useRouter()
-  const { user, isLoggedIn, authReady } = useUserStore()
+  const { isLoggedIn, authReady } = useUserStore()
 
   const [images, setImages] = useState<string[]>([])
   const [title, setTitle] = useState('')

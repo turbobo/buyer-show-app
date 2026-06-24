@@ -8,7 +8,6 @@ import { addComment as addCommentApi } from '@/services/comment'
 import CommentItem from '@/components/CommentItem'
 import { useAuthGuard } from '@/hooks/useAuthGuard'
 import { useUIStore } from '@/store/ui'
-import { useUserStore } from '@/store/user'
 import { fadeUp, heartbeatKeyframes, heartbeatTransition } from '@/lib/animations'
 import MobileBackButton from '@/components/MobileBackButton'
 import type { Post, Comment } from '@/types'
@@ -19,7 +18,6 @@ export default function PostDetailClient() {
   const postId = params.id as string
   const { guard } = useAuthGuard()
   const addToast = useUIStore((s) => s.addToast)
-  const currentUser = useUserStore((s) => s.user)
 
   const [post, setPost] = useState<Post | null>(null)
   const [loading, setLoading] = useState(true)

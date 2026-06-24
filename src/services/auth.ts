@@ -5,7 +5,7 @@ import { fetchCurrentUser } from '@/services/user'
 
 /** 匿名登录（开发阶段使用） */
 export async function signInAnonymously(): Promise<User> {
-  const { data, error } = await supabase.auth.signInAnonymously()
+  const { error } = await supabase.auth.signInAnonymously()
   if (error) throw new Error(`登录失败: ${error.message}`)
 
   const user = await fetchCurrentUser()
@@ -17,7 +17,7 @@ export async function signInAnonymously(): Promise<User> {
 
 /** 手机号 + 验证码登录 */
 export async function signInWithPhone(phone: string, token: string): Promise<User> {
-  const { data, error } = await supabase.auth.verifyOtp({
+  const { error } = await supabase.auth.verifyOtp({
     phone,
     token,
     type: 'sms',
@@ -39,7 +39,7 @@ export async function sendPhoneOtp(phone: string): Promise<void> {
 
 /** 邮箱 + 密码登录 */
 export async function signInWithEmail(email: string, password: string): Promise<User> {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw new Error(`登录失败: ${error.message}`)
 
   const user = await fetchCurrentUser()

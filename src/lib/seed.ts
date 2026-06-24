@@ -18,8 +18,6 @@ export async function seedIfEmpty(): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  const now = new Date()
-
   const samplePosts = [
     {
       user_id: user.id,

@@ -1,5 +1,3 @@
-import type { NextRouter } from 'next/router'
-
 /**
  * 智能返回：优先走 router.back()（保留滚动位、转场动画），
  * 无历史记录时 fallback 到 router.replace(fallback)。

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { adminFetchActiveTagOptions, type AdminTag } from '@/services/admin'
+import { useUIStore } from '@/store/ui'
 
 /* ───────── Modal 容器 ───────── */
 
@@ -116,13 +117,16 @@ export function MergeModal({
   const [options, setOptions] = useState<Array<{ id: string; name: string }>>([])
   const [targetId, setTargetId] = useState<string>('')
   const [loadingOptions, setLoadingOptions] = useState(true)
+  const addToast = useUIStore((s) => s.addToast)
 
   useEffect(() => {
     adminFetchActiveTagOptions()
-      .then((list) => setOptions(list.filter((t) => t.id !== source.id)))
-      .catch(() => {})
+      .then((list) => setOptions(list.filter((opt) => opt.id !== source.id)))
+      .catch((err: unknown) => {
+        addToast('error', err instanceof Error ? err.message : '加载标签选项失败')
+      })
       .finally(() => setLoadingOptions(false))
-  }, [source.id])
+  }, [source.id, addToast])
 
   return (
     <ModalShell onClose={onClose}>

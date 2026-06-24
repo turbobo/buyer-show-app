@@ -47,18 +47,22 @@ export default function MyFavoritesPage() {
 
     setLoading(true)
     let cancelled = false
-    const p =
+    const fetchPromise =
       tab === 'posts'
         ? fetchUserFavorites(user.id).then(setPosts)
         : tab === 'comments'
           ? fetchUserFavoriteComments(user.id).then(setComments)
           : fetchUserFavoriteTags(user.id).then(setTags)
 
-    p.catch(() => {}).finally(() => {
-      if (!cancelled) setLoading(false)
-    })
+    fetchPromise
+      .catch((err: unknown) => {
+        addToast('error', err instanceof Error ? err.message : '加载收藏失败')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => { cancelled = true }
-  }, [authReady, isLoggedIn, user, router, tab])
+  }, [authReady, isLoggedIn, user, router, tab, addToast])
 
   const handleTagUnfavorite = (tag: string) => {
     guard(async () => {

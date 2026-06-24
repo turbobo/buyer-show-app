@@ -30,11 +30,11 @@ export default function AdminUsersPage() {
 
   // 搜索防抖 300ms
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearch(search)
       setPage(1)
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [search])
 
   // 拉列表

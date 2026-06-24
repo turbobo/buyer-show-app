@@ -50,7 +50,7 @@ export default function ProfileEditPage() {
       return
     }
     setNicknameStatus('checking')
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const ok = await isNicknameAvailable(trimmed, user.id)
         setNicknameStatus(ok ? 'ok' : 'taken')
@@ -58,7 +58,7 @@ export default function ProfileEditPage() {
         setNicknameStatus('idle')
       }
     }, 350)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [nickname, user])
 
   const handleAvatarPick = () => fileInputRef.current?.click()

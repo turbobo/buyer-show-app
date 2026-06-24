@@ -29,11 +29,11 @@ export function useTagsPage() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearch(search)
       setPage(1)
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [search])
 
   const reload = () => {

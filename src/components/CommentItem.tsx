@@ -24,8 +24,8 @@ function formatTime(dateStr: string): string {
   if (diff < hour) return `${Math.floor(diff / minute)}分钟前`
   if (diff < day) return `${Math.floor(diff / hour)}小时前`
   if (diff < 7 * day) return `${Math.floor(diff / day)}天前`
-  const d = new Date(dateStr)
-  return `${d.getMonth() + 1}月${d.getDate()}日`
+  const date = new Date(dateStr)
+  return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
 export default function CommentItem({ comment, initialFavorited, onToggle }: Props) {

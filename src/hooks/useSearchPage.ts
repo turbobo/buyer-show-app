@@ -3,6 +3,7 @@ import { searchPosts } from '@/services/post'
 import { fetchUserFavoriteTagSet, toggleTagFavorite } from '@/services/favorite'
 import { fetchSearchHistory, saveSearchKeyword, clearSearchHistory } from '@/services/search'
 import { useUserStore } from '@/store/user'
+import { useUIStore } from '@/store/ui'
 import { useAuthGuard } from '@/hooks/useAuthGuard'
 import type { Post } from '@/types'
 
@@ -19,6 +20,7 @@ export function useSearchPage() {
 
   const isLoggedIn = useUserStore((s) => s.isLoggedIn)
   const user = useUserStore((s) => s.user)
+  const addToast = useUIStore((s) => s.addToast)
   const { guard } = useAuthGuard()
 
   useEffect(() => {
@@ -32,20 +34,30 @@ export function useSearchPage() {
     }
     let cancelled = false
     fetchUserFavoriteTagSet(user.id)
-      .then((s) => { if (!cancelled) setFavoritedTags(s) })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [user])
+      .then((s) => {
+        if (!cancelled) setFavoritedTags(s)
+      })
+      .catch((err: unknown) => {
+        addToast('error', err instanceof Error ? err.message : '加载收藏标签失败')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user, addToast])
 
   useEffect(() => {
     if (!isLoggedIn || !user) return
-    fetchSearchHistory(user.id).then(setSearchHistory)
-  }, [isLoggedIn, user])
+    fetchSearchHistory(user.id)
+      .then(setSearchHistory)
+      .catch((err: unknown) => {
+        addToast('error', err instanceof Error ? err.message : '加载搜索历史失败')
+      })
+  }, [isLoggedIn, user, addToast])
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      const q = debouncedQuery.trim()
-      if (!q) {
+      const queryText = debouncedQuery.trim()
+      if (!queryText) {
         setResults([])
         setTotalCount(0)
         return
@@ -53,10 +65,11 @@ export function useSearchPage() {
       setSearching(true)
       setHasSearched(true)
       try {
-        const res = await searchPosts(q)
+        const res = await searchPosts(queryText)
         setResults(res.list)
         setTotalCount(res.total)
-      } catch {
+      } catch (err: unknown) {
+        addToast('error', err instanceof Error ? err.message : '搜索失败')
         setResults([])
         setTotalCount(0)
       } finally {
@@ -64,7 +77,7 @@ export function useSearchPage() {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [debouncedQuery])
+  }, [debouncedQuery, addToast])
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300)
@@ -90,12 +103,12 @@ export function useSearchPage() {
   }
 
   const commitSearch = useCallback(async () => {
-    const q = query.trim()
-    if (!q || !isLoggedIn || !user) return
-    await saveSearchKeyword(user.id, q)
+    const queryText = query.trim()
+    if (!queryText || !isLoggedIn || !user) return
+    await saveSearchKeyword(user.id, queryText)
     setSearchHistory((prev) => {
-      const filtered = prev.filter((item) => item !== q)
-      return [q, ...filtered].slice(0, 5)
+      const filtered = prev.filter((item) => item !== queryText)
+      return [queryText, ...filtered].slice(0, 5)
     })
   }, [query, isLoggedIn, user])
 

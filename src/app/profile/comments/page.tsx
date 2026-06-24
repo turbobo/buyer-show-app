@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useUserStore } from '@/store/user'
+import { useUIStore } from '@/store/ui'
 import { fetchUserComments, fetchUserCommentsGroupedByPost } from '@/services/comment'
 import ProfileSubPageLayout, { EmptyState } from '@/components/layout/ProfileSubPageLayout'
 import type { Comment, Post } from '@/types'
@@ -19,13 +20,13 @@ type CommentWithPost = Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> 
 
 function formatTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 1) return '刚刚'
-  if (m < 60) return `${m}分钟前`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}小时前`
-  const d = Math.floor(h / 24)
-  if (d < 30) return `${d}天前`
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return '刚刚'
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}小时前`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}天前`
   return new Date(iso).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
 }
 
@@ -38,6 +39,8 @@ export default function MyCommentsPage() {
   const [grouped, setGrouped] = useState<Array<{ post: Pick<Post, 'id' | 'title' | 'images'>; comments: Comment[] }>>([])
   const [loading, setLoading] = useState(true)
 
+  const addToast = useUIStore((s) => s.addToast)
+
   useEffect(() => {
     if (!authReady) return
     if (!isLoggedIn || !user) {
@@ -47,16 +50,20 @@ export default function MyCommentsPage() {
 
     setLoading(true)
     let cancelled = false
-    const p =
+    const fetchPromise =
       tab === 'flat'
         ? fetchUserComments(user.id).then(setComments)
         : fetchUserCommentsGroupedByPost(user.id).then(setGrouped)
 
-    p.catch(() => {}).finally(() => {
-      if (!cancelled) setLoading(false)
-    })
+    fetchPromise
+      .catch((err: unknown) => {
+        addToast('error', err instanceof Error ? err.message : '加载评论失败')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => { cancelled = true }
-  }, [authReady, isLoggedIn, user, router, tab])
+  }, [authReady, isLoggedIn, user, router, tab, addToast])
 
   const totalCount =
     tab === 'flat' ? comments.length : grouped.reduce((n, g) => n + g.comments.length, 0)

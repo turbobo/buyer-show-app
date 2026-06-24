@@ -69,6 +69,17 @@ const MENU_ITEMS: MenuItem[] = [
     color: 'from-teal-400 to-emerald-400',
   },
   {
+    label: '修改密码',
+    href: '/profile/change-password',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0110 0v4" />
+      </svg>
+    ),
+    color: 'from-violet-400 to-purple-400',
+  },
+  {
     label: '设置',
     href: null,
     icon: (

@@ -223,6 +223,15 @@ export default function LoginPage() {
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
                 className="w-full h-11 px-4 rounded-xl bg-gray-50 border border-gray-100 text-body text-gray-800 placeholder-gray-300 outline-none focus:border-coral-300 focus:ring-1 focus:ring-coral-100 transition-all"
               />
+              {isLogin && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/auth/forgot-password')}
+                  className="block text-tiny text-gray-400 hover:text-coral-500 transition-colors text-right mt-1.5 ml-auto"
+                >
+                  忘记密码？
+                </button>
+              )}
             </div>
 
             {/* Confirm password (register only) */}

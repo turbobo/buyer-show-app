@@ -93,3 +93,33 @@ export function onAuthStateChange(callback: (user: User | null) => void) {
     }
   })
 }
+
+/** 修改密码（需验证当前密码） */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) throw new Error('请先登录')
+
+  const { error: verifyErr } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  })
+  if (verifyErr) throw new Error('当前密码不正确')
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(`修改失败: ${error.message}`)
+}
+
+/** 发送密码重置邮件 */
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+  const redirectTo = typeof window !== 'undefined'
+    ? `${window.location.origin}/auth/reset-password`
+    : undefined
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  if (error) throw new Error(`发送失败: ${error.message}`)
+}
+
+/** 重置密码（从邮件链接回来后调用） */
+export async function resetPassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(`重置失败: ${error.message}`)
+}

@@ -68,6 +68,12 @@ export function useAuthInit() {
         const profile = await loadProfile(session.user.id)
         if (!cancelled && profile) setUser(profile)
       }
+
+      // 密码重置回调 — reset-password 页面自行监听此事件处理表单，
+      // 这里不把 recovery session 当正常登录同步 profile
+      if (event === 'PASSWORD_RECOVERY') {
+        return
+      }
     })
 
     return () => {

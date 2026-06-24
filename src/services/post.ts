@@ -13,24 +13,27 @@ export async function fetchPosts(
 ): Promise<PaginatedResponse<Post>> {
   let query = supabase
     .from('posts')
-    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'exact' })
+    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
     .eq('status', POST_STATUS.ACTIVE)
     .order('created_at', { ascending: false })
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   if (tag) {
     query = query.contains('tags', [tag])
   }
 
-  const { data, error, count } = await query
+  const { data, error } = await query
 
   if (error) throw new Error(`获取帖子失败: ${error.message}`)
 
-  const total = count ?? 0
+  const rows = (data ?? []) as Post[]
+  const hasMore = rows.length > PAGE_SIZE
+  const list = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+
   return {
-    list: (data ?? []) as Post[],
-    total,
-    hasMore: page * PAGE_SIZE < total,
+    list,
+    total: 0,
+    hasMore,
     page,
   }
 }
@@ -299,7 +302,7 @@ export async function searchPosts(keyword: string, page: number = 1): Promise<Pa
 
   const { data, error, count } = await supabase
     .from('posts')
-    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'exact' })
+    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)', { count: 'estimated' })
     .eq('status', POST_STATUS.ACTIVE)
     .or(
       [

@@ -4,6 +4,7 @@ import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
 import { openLoginSheet, quickLogout } from '@/lib/auth-helpers'
 import { deleteAccount, fetchUserPosts } from '@/services/user'
+import type { MenuClickPayload } from '@/components/profile/ProfileMenu'
 import type { Post } from '@/types'
 
 export function useProfilePage() {
@@ -18,14 +19,6 @@ export function useProfilePage() {
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 2000)
-  }
-
-  const handleMenuClick = (href: string | null, label: string) => {
-    if (href) {
-      router.push(href)
-    } else {
-      showToast(`${label} - 功能开发中`)
-    }
   }
 
   const handleLogin = () => {
@@ -57,6 +50,16 @@ export function useProfilePage() {
     })
   }
 
+  const handleMenuClick = (payload: MenuClickPayload) => {
+    if (payload.href) {
+      router.push(payload.href)
+    } else if (payload.action === 'logout') {
+      handleLogout()
+    } else if (payload.action === 'deleteAccount') {
+      handleDeleteAccount()
+    }
+  }
+
   useEffect(() => {
     if (!isLoggedIn || !user) {
       setUserPosts([])
@@ -77,7 +80,5 @@ export function useProfilePage() {
     userPosts,
     handleMenuClick,
     handleLogin,
-    handleLogout,
-    handleDeleteAccount,
   }
 }

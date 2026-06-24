@@ -5,7 +5,6 @@ import { useProfilePage } from '@/hooks/useProfilePage'
 import ProfileHeader from '@/components/profile/ProfileHeader'
 import ProfileMenu from '@/components/profile/ProfileMenu'
 import ProfilePosts from '@/components/profile/ProfilePosts'
-import ProfileActions from '@/components/profile/ProfileActions'
 import ProfileToast from '@/components/profile/ProfileToast'
 
 export default function ProfilePage() {
@@ -17,8 +16,6 @@ export default function ProfilePage() {
     userPosts,
     handleMenuClick,
     handleLogin,
-    handleLogout,
-    handleDeleteAccount,
   } = useProfilePage()
 
   return (
@@ -30,7 +27,7 @@ export default function ProfilePage() {
         onLogin={handleLogin}
       />
 
-      {/* ── Logged-in Content ── */}
+      {/* Logged-in Content */}
       <AnimatePresence>
         {isLoggedIn && user && (
           <motion.div
@@ -42,11 +39,6 @@ export default function ProfilePage() {
             <ProfileMenu user={user} onMenuClick={handleMenuClick} />
 
             <ProfilePosts userPosts={userPosts} />
-
-            <ProfileActions
-              onLogout={handleLogout}
-              onDeleteAccount={handleDeleteAccount}
-            />
           </motion.div>
         )}
       </AnimatePresence>

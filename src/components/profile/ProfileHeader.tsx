@@ -15,11 +15,11 @@ export default function ProfileHeader({ authReady, isLoggedIn, user, onLogin }: 
   const router = useRouter()
 
   return (
-    <header className="relative overflow-hidden">
+    <header className="relative overflow-hidden max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto">
       <div className="absolute inset-0 bg-gradient-to-br from-coral-500 via-coral-400 to-orange-300" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
 
-      <div className="relative px-5 md:px-6 pt-14 pb-8 max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto">
+      <div className="relative px-5 md:px-6 pt-14 pb-8">
         {!authReady ? (
           /* ── Rehydrating Skeleton ── */
           <div className="flex flex-col items-center text-center py-8 animate-pulse">

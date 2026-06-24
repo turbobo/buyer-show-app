@@ -188,7 +188,7 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
         variants={sectionVariants}
         initial="hidden"
         animate="visible"
-        className="bg-white rounded-2xl shadow-sm p-5 md:p-6 mb-4 md:mb-5"
+        className="bg-white rounded-2xl shadow-sm mb-4 md:mb-5 overflow-hidden"
       >
         <div className="grid grid-cols-3 divide-x divide-gray-100">
           {[
@@ -201,7 +201,7 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08 }}
-              className="flex flex-col items-center justify-center px-2"
+              className="flex flex-col items-center justify-center py-5 md:py-6"
             >
               <span className="text-xl md:text-2xl font-bold text-gray-800 font-num tabular-nums">
                 {stat.value >= 1000
@@ -222,47 +222,47 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="mb-4 md:mb-5"
+          className="mb-4 md:mb-5 bg-white rounded-2xl shadow-sm overflow-hidden"
         >
-          <p className="flex items-center gap-2 text-xs md:text-sm font-medium text-gray-500 px-1 mb-2.5">
-            <span className="w-0.5 h-3 rounded-full bg-gradient-to-b from-coral-400 to-coral-200" />
-            {section.title}
-          </p>
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-            {section.items.map((item, i) => (
-              <motion.button
-                key={item.label}
-                whileTap={{ backgroundColor: '#f9f5f2' }}
-                onClick={() => onMenuClick({ href: item.href, action: item.action, label: item.label })}
-                className={`w-full flex items-center gap-3 md:gap-4 px-5 md:px-6 py-3.5 md:py-4 text-left transition-colors hover:bg-warm-50 ${
-                  i < section.items.length - 1 ? 'border-b border-gray-50' : ''
-                }`}
-              >
-                <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
-                  {item.icon}
-                </div>
-                <span className={`flex-1 min-w-0 text-sm md:text-base font-medium truncate ${
-                  item.danger ? 'text-red-400' : 'text-gray-700'
-                }`}>
-                  {item.label}
-                </span>
-                {!item.danger && (
-                  <svg
-                    className="shrink-0 text-gray-300"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                )}
-              </motion.button>
-            ))}
+          <div className="flex items-center gap-2 px-5 md:px-6 py-3 md:py-3.5 border-b border-gray-100 bg-warm-50/40">
+            <span className="w-1 h-4 rounded-full bg-gradient-to-b from-coral-500 to-coral-300" />
+            <h3 className="text-sm md:text-[15px] font-semibold text-gray-700">
+              {section.title}
+            </h3>
           </div>
+          {section.items.map((item, i) => (
+            <motion.button
+              key={item.label}
+              whileTap={{ backgroundColor: '#f9f5f2' }}
+              onClick={() => onMenuClick({ href: item.href, action: item.action, label: item.label })}
+              className={`w-full flex items-center gap-3 md:gap-4 px-5 md:px-6 py-3.5 md:py-4 text-left transition-colors hover:bg-warm-50 ${
+                i < section.items.length - 1 ? 'border-b border-gray-50' : ''
+              }`}
+            >
+              <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
+                {item.icon}
+              </div>
+              <span className={`flex-1 min-w-0 text-sm md:text-base font-medium truncate ${
+                item.danger ? 'text-red-400' : 'text-gray-700'
+              }`}>
+                {item.label}
+              </span>
+              {!item.danger && (
+                <svg
+                  className="shrink-0 text-gray-300"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              )}
+            </motion.button>
+          ))}
         </motion.div>
       ))}
     </>

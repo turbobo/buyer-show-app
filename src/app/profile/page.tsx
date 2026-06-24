@@ -34,7 +34,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="px-5 -mt-3 max-w-xl md:max-w-3xl lg:max-w-5xl mx-auto"
+            className="px-5 md:px-6 -mt-3 max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto"
           >
             <ProfileMenu user={user} onMenuClick={handleMenuClick} />
 

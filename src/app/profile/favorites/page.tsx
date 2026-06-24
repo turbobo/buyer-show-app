@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useUserStore } from '@/store/user'
@@ -13,21 +12,17 @@ import {
   fetchUserFavoriteTags,
   toggleTagFavorite,
 } from '@/services/favorite'
-import { fetchFollowing } from '@/services/follow'
 import PostCard from '@/components/PostCard'
 import CommentItem from '@/components/CommentItem'
-import FollowButton from '@/components/FollowButton'
 import ProfileSubPageLayout, { EmptyState, GridSkeleton } from '@/components/layout/ProfileSubPageLayout'
-import { USER_ROLE } from '@/lib/constants'
-import type { Post, Comment, User } from '@/types'
+import type { Post, Comment } from '@/types'
 
-type TabKey = 'posts' | 'comments' | 'tags' | 'users'
+type TabKey = 'posts' | 'comments' | 'tags'
 
 const TABS: Array<{ key: TabKey; label: string }> = [
   { key: 'posts', label: '帖子' },
   { key: 'comments', label: '评论' },
   { key: 'tags', label: '标签' },
-  { key: 'users', label: '用户' },
 ]
 
 export default function MyFavoritesPage() {
@@ -40,7 +35,6 @@ export default function MyFavoritesPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [tags, setTags] = useState<string[]>([])
-  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
 
   // 根据 tab 拉取对应数据
@@ -58,9 +52,7 @@ export default function MyFavoritesPage() {
         ? fetchUserFavorites(user.id).then(setPosts)
         : tab === 'comments'
           ? fetchUserFavoriteComments(user.id).then(setComments)
-          : tab === 'users'
-            ? fetchFollowing(user.id).then(setUsers)
-            : fetchUserFavoriteTags(user.id).then(setTags)
+          : fetchUserFavoriteTags(user.id).then(setTags)
 
     fetchPromise
       .catch((err: unknown) => {
@@ -80,7 +72,7 @@ export default function MyFavoritesPage() {
     }, '收藏标签')
   }
 
-  const count = tab === 'posts' ? posts.length : tab === 'comments' ? comments.length : tab === 'users' ? users.length : tags.length
+  const count = tab === 'posts' ? posts.length : tab === 'comments' ? comments.length : tags.length
 
   return (
     <ProfileSubPageLayout
@@ -108,7 +100,7 @@ export default function MyFavoritesPage() {
       </div>
 
       {loading ? (
-        tab === 'users' ? <UsersSkeleton /> : <GridSkeleton />
+        <GridSkeleton />
       ) : tab === 'posts' ? (
         posts.length === 0 ? (
           <EmptyState
@@ -156,7 +148,7 @@ export default function MyFavoritesPage() {
             ))}
           </div>
         )
-      ) : tab === 'tags' ? (
+      ) : (
         tags.length === 0 ? (
           <EmptyState
             title="还没有收藏标签"
@@ -197,98 +189,7 @@ export default function MyFavoritesPage() {
             ))}
           </div>
         )
-      ) : (
-        users.length === 0 ? (
-          <EmptyState
-            title="还没有关注任何人"
-            hint="去详情页关注喜欢的作者吧"
-            icon={
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                <path d="M16 3.13a4 4 0 010 7.75" />
-              </svg>
-            }
-          />
-        ) : (
-          <div className="space-y-2 max-w-2xl">
-            {users.map((u, i) => (
-              <UserRow key={u.id} targetUser={u} index={i} currentUserId={user?.id ?? ''} />
-            ))}
-          </div>
-        )
       )}
     </ProfileSubPageLayout>
-  )
-}
-
-function UserRow({
-  targetUser,
-  index,
-  currentUserId,
-}: {
-  targetUser: User
-  index: number
-  currentUserId: string
-}) {
-  const isSelf = targetUser.id === currentUserId
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03 }}
-      className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3"
-    >
-      <Link href={`/user/${targetUser.id}`} className="shrink-0">
-        <img
-          src={targetUser.avatar_url || ''}
-          alt={targetUser.nickname || '用户头像'}
-          loading="lazy"
-          className="w-12 h-12 rounded-full object-cover hover:ring-2 hover:ring-coral-200 transition-all"
-        />
-      </Link>
-
-      <Link href={`/user/${targetUser.id}`} className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-gray-800 truncate">
-            {targetUser.nickname || '未命名'}
-          </p>
-          {targetUser.role === USER_ROLE.ADMIN && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-coral-50 text-coral-500 font-medium">
-              管理员
-            </span>
-          )}
-        </div>
-        {targetUser.bio && <p className="text-xs text-gray-500 truncate mt-0.5">{targetUser.bio}</p>}
-        <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-1 font-num">
-          <span>{targetUser.post_count} 帖</span>
-          <span>{targetUser.follower_count} 粉丝</span>
-          <span>{targetUser.following_count} 关注</span>
-        </div>
-      </Link>
-
-      {!isSelf && <FollowButton targetUserId={targetUser.id} size="sm" />}
-    </motion.div>
-  )
-}
-
-function UsersSkeleton() {
-  return (
-    <div className="space-y-2 max-w-2xl">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3 animate-pulse"
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100" />
-          <div className="flex-1 space-y-2">
-            <div className="h-3 w-24 bg-gray-100 rounded" />
-            <div className="h-2 w-36 bg-gray-100 rounded" />
-          </div>
-          <div className="w-16 h-7 rounded-full bg-gray-100" />
-        </div>
-      ))}
-    </div>
   )
 }

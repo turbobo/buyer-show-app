@@ -1,9 +1,56 @@
 {
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'TARGET=\"${CLAUDE_FILE_PATH:-}\"; if [ -n \"$TARGET\" ] && echo \"$TARGET\" | grep -qE \"\\\\.env(\\\\.|$)|credentials|secrets\"; then echo \"🔴 拒绝操作敏感文件：$TARGET\"; exit 2; fi; exit 0'",
+            "timeout": 3000
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'CMD=\"${CLAUDE_TOOL_INPUT:-}\"; if echo \"$CMD\" | grep -qE \"git push.*--force|git reset --hard|rm -rf /|DROP DATABASE\"; then echo \"🔴 拒绝危险命令：$CMD\"; exit 2; fi; exit 0'",
+            "timeout": 2000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'TARGET=\"${CLAUDE_FILE_PATH:-}\"; if [ -n \"$TARGET\" ] && [ -f \"$TARGET\" ]; then LINES=$(wc -l < \"$TARGET\" 2>/dev/null || echo 0); if [ \"$LINES\" -gt 300 ]; then echo \"🔴 违规：$TARGET 当前 $LINES 行，超过 AGENTS.md 强制上限 300 行，下次编辑必须拆分\"; fi; fi; exit 0'",
+            "timeout": 2000
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
-        "command": "git diff --quiet && git diff --cached --quiet || (git add -u && git commit -m \"auto: Claude Code changes\")",
-        "timeout": 10000
+        "type": "command",
+        "command": "bash -c 'cd /Users/qinghang/Documents/QoderWorkSpace/MyApp/buyer-show 2>/dev/null || exit 0; git diff --quiet && git diff --cached --quiet && exit 0; echo \"📦 Work tree 有未提交变更。建议运行 /commit 一键 commit（含验证 + 文档同步），或 /review 先做代码审核。\"; exit 0'",
+        "timeout": 5000
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"[$(date +%H:%M:%S)] ${CLAUDE_NOTIFICATION:-}\" >> ~/.claude/buyer-show-notifications.log'",
+            "async": true,
+            "timeout": 2000
+          }
+        ]
       }
     ]
   }

@@ -70,29 +70,32 @@ src/
 
 ### 数据库状态枚举
 - 状态字段用 `SMALLINT`，语义由 `src/lib/constants.ts` 的 `as const` 对象维护
+- 已落地常量：`POST_STATUS` / `USER_ROLE` / `USER_STATUS` / `TAG_STATUS`
 - 禁止在查询中写状态字符串字面量，必须用常量（如 `POST_STATUS.ACTIVE`）
 
-### 安全
-- 禁止 `dangerouslySetInnerHTML`
-- 禁止硬编码 API Key / 密码 / Token
-- 用户输入必须前端校验 + 后端校验
-- 生产代码禁止 `console.log`（允许 `console.error('[scope]', err)`）
+### Supabase 迁移脚本
+- 命名：`supabase/migration-vN-xxx.sql`（N 递增，当前到 v10）
+- 每加一版必须同步：`技术方案文档.md` §7.N 加章节 + `产品设计文档.md` 进度条
+- 迁移五步法：加临时列 → 数据迁移 → DROP POLICY/INDEX/CONSTRAINT → DROP 旧列 + RENAME → 重建
+- **DROP 列/函数前必须先用 `\d+` 列出所有依赖，集中 DROP 完再 DROP 目标**（否则 PG 报 2BP01）
+- `DROP FUNCTION` 前必须先 DROP 所有引用它的 RLS 策略（含跨表，如 `tags_admin_all` 引用 `is_admin`）
+- `CREATE INDEX CONCURRENTLY IF NOT EXISTS` 只检查索引名不检查定义，多版本同名单列 vs 复合索引会被静默跳过 → 先 DROP 再重建
 
-### 性能
-- 图片 `loading="lazy"`（首屏首图除外用 `eager`）
-- 搜索防抖 300ms，滚动节流 100ms
-- 禁止引入整个 lodash / moment.js
-- 列表 `key` 禁止用 index（除非列表不变）
+### 响应式 max-width 链（PC 端容器必须复用，否则宽屏失衡）
+```
+max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto
+```
+已应用：`TopNav` / `ProfileHeader` / `ProfilePage`；新增 PC 端容器必须保持一致。
 
-### 无障碍
-- 图标按钮必须 `aria-label`
-- 图片必须 `alt`
-- 触控目标最小 44×44px
+### Tailwind grid + divide 分割线
+列分割时**外层禁止用全局 `p-*`**（会让分割线被截断），改为每个 cell 用 `py-*` 垂直内边距 + 外层 `overflow-hidden`，分割线才能从头贯穿到尾。
 
-### 动效
-- 微交互 150~300ms，页面转场 300~500ms
-- `prefers-reduced-motion: reduce` 时关闭非必要动画
-- 动画 variants 集中定义在 `src/lib/animations.ts`
+### 单文件行数
+- 单文件 ≤ **300 行**（超过必须拆分）
+- JSX ≤ **80 行**（超过必须抽子组件）
+
+### 单字母变量
+禁止（循环 `i` 除外），包括 `.map((x) => ...)` 中的回调参数。
 
 ## Git Commit
 
@@ -101,11 +104,85 @@ Conventional Commits 格式，中文描述，subject ≤ 50 字：
 feat(scope): 描述
 fix(scope): 描述
 refactor(scope): 描述
+perf(scope): 描述
+docs(scope): 描述
+chore(scope): 描述
 ```
+**每次 commit 只做一件事**，按功能拆分多次 commit 时文档更新归入对应那次 feat/fix commit，不要单独凑「docs: 更新文档」。
 
-## 文档同步规则
+## 文档同步规则（强制）
 
-修改代码后，如涉及以下变更必须同步更新对应文档：
-- 新增/删除页面或组件 → 更新 `产品设计文档.md`
-- 修改设计 Token 或组件样式 → 更新 `UI设计规范文档.md`
-- 修改架构规范或工程约定 → 更新 `技术开发规范.md`
+继承自 `MyApp/AGENTS.md`，对本项目同样生效：
+
+| 改动类别 | 目标文档 |
+|---|---|
+| 架构调整、技术选型、模块分层、DB schema、索引、RLS、RPC、关键代码设计 | `技术方案文档.md` |
+| 新增/修改/删除用户可感知功能（页面、交互、按钮、流程）、待办项状态变更 | `产品设计文档.md` |
+| UI 设计 Token、组件样式、动效 | `UI设计规范文档.md` |
+
+- 文档变更与代码变更**同一次 commit 内**完成
+- 待办项完成时从「待办」段移到「已完成」段（或勾选 `[x]`），不要静默删除
+- 不要在文档中粘贴整段代码 diff —— 总结设计决策、关键字段/接口签名即可
+
+## 工作流速查
+
+### 新增功能
+1. 读 `产品设计文档.md` 确认功能定位
+2. 读 `UI设计规范文档.md` 确认视觉规范
+3. 如需改 DB：写 `supabase/migration-vN-xxx.sql`
+4. 实现：`services/` → `hooks/` → `components/` → `app/*/page.tsx`
+5. 同步文档（技术方案 §7.N + 产品设计进度条）
+6. 验证：`npx tsc --noEmit` + `npm run lint` 必须 exit 0
+7. Commit：`feat(scope): 描述`
+
+### 修复 Bug
+1. 定位根因（先 grep 确认相关代码位置）
+2. 修复：优先在 `services/` 层修复（组件层不改 DB 逻辑）
+3. 同步文档（技术方案 §7.N + 产品设计已完成清单）
+4. 验证：tsc + lint
+5. Commit：`fix(scope): 描述`
+
+### DB 索引优化
+1. 盘点 `supabase/*.sql` 全部 `CREATE INDEX`
+2. 比对 `src/services/*.ts` 实际查询模式
+3. 写新 migration（用 `CREATE INDEX CONCURRENTLY IF NOT EXISTS`）
+4. **注意同名冲突**：先 DROP 旧名再重建
+5. 同步 `技术方案文档.md` §7.N
+
+## 已知陷阱
+
+| 陷阱 | 规避 |
+|---|---|
+| `IF NOT EXISTS` 索引同名冲突 | 先 `DROP INDEX IF EXISTS` 再 `CREATE INDEX` |
+| `DROP COLUMN` 报 2BP01 | 先用 `\d+` 列出依赖，集中 DROP |
+| `UNIQUE(a,b)` 自带 backing index | 不再建 `(a)` 单列索引 |
+| `grid + divide-x + p-*` 分割线被截断 | cell 用 `py-*` + 外层 `overflow-hidden` |
+| `useSearchParams` hydration | 包在 `<Suspense>` 内 |
+| `Math.random()` hydration mismatch | 用固定数组 index 替代 |
+
+## 安全
+
+- 禁止 `dangerouslySetInnerHTML`（JSON-LD 等少数场景除外，需用 `JSON.stringify` 安全序列化）
+- 禁止硬编码 API Key / 密码 / Token
+- 用户输入必须前端校验 + 后端校验
+- 生产代码禁止 `console.log`（允许 `console.error('[scope]', err)`）
+
+## 性能
+
+- 图片 `loading="lazy"`（首屏首图除外用 `eager`）
+- 搜索防抖 300ms，滚动节流 100ms
+- 禁止引入整个 lodash / moment.js
+- 列表 `key` 禁止用 index（除非列表不变）
+
+## 无障碍
+
+- 图标按钮必须 `aria-label`
+- 图片必须 `alt`
+- 触控目标最小 44×44px
+
+## 动效
+
+- 微交互 150~300ms，页面转场 300~500ms
+- `prefers-reduced-motion: reduce` 时关闭非必要动画
+- 动画 variants 集中定义在 `src/lib/animations.ts`
+

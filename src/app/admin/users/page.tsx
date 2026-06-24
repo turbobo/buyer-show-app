@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
   const handleBan = (u: User) => {
     useUIStore.getState().openModal({
       title: `封禁 ${u.nickname}？`,
-      description: '封禁后该用户的所有 active 帖子会被隐藏，且无法登录。',
+      description: '封禁后该用户的帖子将被隐藏，且无法使用任何功能。',
       confirmText: '确认封禁',
       confirmDanger: true,
       onConfirm: async () => {

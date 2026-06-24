@@ -1,24 +1,24 @@
 import { useCallback } from 'react'
 import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
+import { USER_STATUS } from '@/lib/constants'
 
-/**
- * 权限守卫 Hook
- * 包装需要登录才能执行的操作，未登录时弹出登录引导 Sheet
- */
 export function useAuthGuard() {
   const isLoggedIn = useUserStore((s) => s.isLoggedIn)
+  const user = useUserStore((s) => s.user)
   const openLoginSheet = useUIStore((s) => s.openLoginSheet)
 
   const guard = useCallback(
     (action: () => void, reason = '点赞评论') => {
-      if (isLoggedIn) {
-        action()
-      } else {
+      if (!isLoggedIn) {
         openLoginSheet(reason, action)
+      } else if (user?.status === USER_STATUS.BANNED) {
+        return
+      } else {
+        action()
       }
     },
-    [isLoggedIn, openLoginSheet],
+    [isLoggedIn, user?.status, openLoginSheet],
   )
 
   return { isLoggedIn, guard }

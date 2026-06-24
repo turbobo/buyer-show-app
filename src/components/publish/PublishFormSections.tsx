@@ -172,17 +172,15 @@ export default function PublishFormSections({ formState, formActions }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="bg-coral-50/50 rounded-2xl p-4 border border-coral-100/50"
         >
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0 mt-0.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-coral-400 to-coral-500 flex items-center justify-center shrink-0">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                发布后，你的买家秀将展示在「发现」页面，让更多人看到你的真实体验。
-              </p>
-            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              发布后，你的买家秀将展示在「发现」页面，让更多人看到你的真实体验。
+            </p>
           </div>
         </motion.section>
       )}

@@ -173,7 +173,7 @@ export default function AdminUsersPage() {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <img src={u.avatar_url || ''} alt="" className="w-9 h-9 rounded-full object-cover" />
+                          <img src={u.avatar_url || ''} alt="" className="w-9 h-9 rounded-full object-cover" loading="lazy" />
                           <div className="min-w-0">
                             <p className="text-sm text-gray-800 font-medium truncate">
                               {u.nickname || '未命名'}

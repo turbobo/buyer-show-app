@@ -135,7 +135,7 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <img src="/logo.svg" alt="买家说" width={56} height={56} className="mx-auto mb-3" />
+          <img src="/logo.svg" alt="买家说" width={56} height={56} className="mx-auto mb-3" loading="lazy" />
           <h1
             className="text-3xl font-extrabold tracking-tight"
             style={{

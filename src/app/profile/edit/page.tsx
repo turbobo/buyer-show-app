@@ -146,7 +146,7 @@ export default function ProfileEditPage() {
             aria-label="更换头像"
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt="头像" className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt="头像" className="w-full h-full object-cover" loading="lazy" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-coral-200 to-orange-200 flex items-center justify-center text-white text-3xl font-bold">
                 {nickname.charAt(0) || 'U'}

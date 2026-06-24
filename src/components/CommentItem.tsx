@@ -47,6 +47,7 @@ export default function CommentItem({ comment, initialFavorited, onToggle }: Pro
       <img
         src={comment.user?.avatar_url || ''}
         alt=""
+        loading="lazy"
         className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5"
       />
       <div className="flex-1 min-w-0">

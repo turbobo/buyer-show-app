@@ -68,6 +68,7 @@ export default function ProfileHeader({ authReady, isLoggedIn, user, onLogin }: 
                 <img
                   src={user.avatar_url}
                   alt={user.nickname}
+                  loading="lazy"
                   className="w-full h-full object-cover"
                 />
               </div>

@@ -126,6 +126,7 @@ export default function UserDetailClient() {
           <img
             src={profile.avatar_url || ''}
             alt={profile.nickname || '用户头像'}
+            loading="lazy"
             className="w-20 h-20 rounded-full object-cover shrink-0 border-2 border-coral-100"
           />
           <div className="flex-1 min-w-0">

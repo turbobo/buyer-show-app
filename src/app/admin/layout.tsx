@@ -126,7 +126,7 @@ export default function AdminLayout({ children }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <img src={user?.avatar_url || ''} alt="" className="w-7 h-7 rounded-full object-cover" />
+            <img src={user?.avatar_url || ''} alt="" className="w-7 h-7 rounded-full object-cover" loading="lazy" />
             <span className="hidden sm:inline">{user?.nickname}</span>
             <span className="px-1.5 py-0.5 rounded bg-coral-50 text-coral-500 font-medium">管理员</span>
           </div>

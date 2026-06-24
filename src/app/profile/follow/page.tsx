@@ -153,6 +153,7 @@ function Row({
         <img
           src={user.avatar_url || ''}
           alt={user.nickname || '用户头像'}
+          loading="lazy"
           className="w-12 h-12 rounded-full object-cover hover:ring-2 hover:ring-coral-200 transition-all"
         />
       </Link>

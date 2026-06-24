@@ -45,7 +45,7 @@ export default function ImageUploader({ images, onChange, max = 9 }: Props) {
               exit={{ opacity: 0, scale: 0.8 }}
               className="relative aspect-square rounded-xl overflow-hidden"
             >
-              <img src={url} alt="" className="w-full h-full object-cover" onClick={() => setPreviewIdx(i)} />
+              <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" onClick={() => setPreviewIdx(i)} />
               <button
                 type="button"
                 onClick={() => removeImage(i)}
@@ -95,6 +95,7 @@ export default function ImageUploader({ images, onChange, max = 9 }: Props) {
             <img
               src={images[previewIdx]}
               alt=""
+              loading="lazy"
               className="max-w-[90%] max-h-[80vh] object-contain rounded-lg"
             />
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">

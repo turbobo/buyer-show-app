@@ -131,6 +131,7 @@ export default function MyCommentsPage() {
                         <img
                           src={c.post.images[0]}
                           alt=""
+                          loading="lazy"
                           className="w-12 h-12 rounded-lg object-cover shrink-0"
                         />
                       )}
@@ -178,6 +179,7 @@ export default function MyCommentsPage() {
                     <img
                       src={g.post.images[0]}
                       alt=""
+                      loading="lazy"
                       className="w-12 h-12 rounded-lg object-cover shrink-0"
                     />
                   )}

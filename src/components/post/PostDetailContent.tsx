@@ -75,6 +75,7 @@ export default function PostDetailContent({ post }: Props) {
           <img
             src={post.user?.avatar_url || ''}
             alt={`${post.user?.nickname || '匿名'}的头像`}
+            loading="lazy"
             className="w-8 h-8 rounded-full object-cover"
           />
           <div>

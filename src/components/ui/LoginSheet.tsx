@@ -47,7 +47,7 @@ export default function LoginSheet() {
 
             {/* Logo + Content */}
             <div className="flex flex-col items-center mb-6">
-              <img src="/logo.svg" alt="买家说" width={48} height={48} className="mb-3" />
+              <img src="/logo.svg" alt="买家说" width={48} height={48} className="mb-3" loading="lazy" />
               <h3 className="text-h2 text-gray-800">登录后{loginSheet.reason}</h3>
               <p className="text-caption text-gray-400 mt-1">
                 注册/登录后可点赞、评论、发布内容

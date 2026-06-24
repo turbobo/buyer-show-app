@@ -131,6 +131,7 @@ export default function PostCard({ post, index = 0, ownerActions }: Props) {
                 <img
                   src={post.user?.avatar_url || ''}
                   alt={`${post.user?.nickname || '匿名'}的头像`}
+                  loading="lazy"
                   className="w-5 h-5 rounded-full object-cover"
                 />
                 <span className="text-tiny text-gray-500 max-w-[80px] truncate">

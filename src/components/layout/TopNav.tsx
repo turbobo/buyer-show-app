@@ -16,6 +16,8 @@ export default function TopNav() {
   const pathname = usePathname()
   const router = useRouter()
   const isDetail = pathname.startsWith('/post/') || pathname.startsWith('/user/')
+    || (pathname.startsWith('/profile/') && pathname !== '/profile')
+  const backFallback = pathname.startsWith('/profile/') ? '/profile' : '/'
 
   return (
     <header
@@ -27,7 +29,7 @@ export default function TopNav() {
         <div className="flex items-center gap-2 shrink-0">
           {isDetail && (
             <button
-              onClick={() => smartBack(router)}
+              onClick={() => smartBack(router, backFallback)}
               className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center mr-2 transition-colors"
               aria-label="返回上一页"
             >

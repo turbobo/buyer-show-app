@@ -7,12 +7,11 @@ import PublishFormSections from '@/components/publish/PublishFormSections'
 import PublishSubmitBar from '@/components/publish/PublishSubmitBar'
 import LoginPromptModal from '@/components/publish/LoginPromptModal'
 import PublishSuccessToast from '@/components/publish/PublishSuccessToast'
+import { smartBack } from '@/lib/nav-helpers'
 
 export default function PublishPage() {
   const router = useRouter()
   const form = usePublishForm()
-
-  const hasHistory = typeof window !== 'undefined' && window.history.length > 1
 
   const formState = {
     images: form.images,
@@ -41,7 +40,7 @@ export default function PublishPage() {
         <div className="flex items-center justify-between px-5 h-14">
           <motion.button
             whileTap={{ scale: 0.88 }}
-            onClick={() => (hasHistory ? router.back() : router.push('/'))}
+            onClick={() => smartBack(router, '/')}
             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

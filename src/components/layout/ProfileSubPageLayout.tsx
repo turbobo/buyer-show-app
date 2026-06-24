@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { type ReactNode } from 'react'
+import { smartBack } from '@/lib/nav-helpers'
 
 interface Props {
   title: string
@@ -25,7 +26,7 @@ export default function ProfileSubPageLayout({ title, extra, children }: Props) 
         <div className="flex items-center h-12 px-3">
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => router.back()}
+            onClick={() => smartBack(router, '/profile')}
             className="w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center"
             aria-label="返回"
           >

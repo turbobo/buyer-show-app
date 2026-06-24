@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { useUIStore } from '@/store/ui'
 import { supabase } from '@/lib/supabase'
 import { resetPassword } from '@/services/auth'
+import { smartBack } from '@/lib/nav-helpers'
 
 type PageState = 'loading' | 'ready' | 'submitting' | 'success' | 'error'
 
@@ -58,6 +59,19 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen bg-warm-50 flex flex-col items-center justify-center px-6 md:pt-16">
+      {/* 返回按钮 */}
+      <motion.button
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        onClick={() => smartBack(router, '/')}
+        className="fixed top-4 left-4 md:top-20 md:left-8 z-30 w-9 h-9 rounded-full bg-white shadow-card flex items-center justify-center"
+        aria-label="返回"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </motion.button>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

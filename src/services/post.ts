@@ -196,6 +196,26 @@ export async function checkPostLiked(postId: string): Promise<boolean> {
   return Boolean(data)
 }
 
+/** 获取用户点赞过的帖子列表 */
+export async function fetchUserLikedPosts(userId: string): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from('likes')
+    .select(`
+      created_at,
+      post:posts!likes_post_id_fkey(
+        *,
+        user:profiles!posts_user_id_fkey(nickname, avatar_url)
+      )
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`获取点赞帖子失败: ${error.message}`)
+  return (data ?? [])
+    .map((row) => (row as unknown as { post?: Post }).post)
+    .filter((p): p is Post => Boolean(p))
+}
+
 // ─── 收藏 ───
 
 /** 切换收藏 */

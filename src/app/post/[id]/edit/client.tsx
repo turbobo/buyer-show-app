@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { usePostEditForm } from '@/hooks/usePostEditForm'
 import PostEditForm from '@/components/post/PostEditForm'
+import { smartBack } from '@/lib/nav-helpers'
 
 export default function EditPostClient() {
   const form = usePostEditForm()
@@ -61,7 +62,7 @@ export default function EditPostClient() {
         <div className="flex items-center justify-between px-5 h-14">
           <motion.button
             whileTap={{ scale: 0.88 }}
-            onClick={() => (form.hasHistory ? form.router.back() : form.router.push(`/post/${form.postId}`))}
+            onClick={() => smartBack(form.router, `/post/${form.postId}`)}
             className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

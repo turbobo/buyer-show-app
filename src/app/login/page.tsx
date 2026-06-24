@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '@/store/ui'
 import { useUserStore } from '@/store/user'
 import { supabase } from '@/lib/supabase'
+import { smartBack } from '@/lib/nav-helpers'
 import type { User } from '@/types'
 
 type AuthMode = 'login' | 'register'
@@ -120,7 +121,7 @@ export default function LoginPage() {
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        onClick={() => router.back()}
+        onClick={() => smartBack(router, '/')}
         className="fixed top-4 left-4 md:top-20 md:left-8 z-30 w-9 h-9 rounded-full bg-white shadow-card flex items-center justify-center"
         aria-label="返回"
       >

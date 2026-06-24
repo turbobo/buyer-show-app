@@ -98,8 +98,6 @@ export function usePostEditForm() {
     }
   }
 
-  const hasHistory = typeof window !== 'undefined' && window.history.length > 1
-
   return {
     postId,
     router,
@@ -124,6 +122,5 @@ export function usePostEditForm() {
     selectedTags,
     toggleTag,
     handleSubmit,
-    hasHistory,
   }
 }

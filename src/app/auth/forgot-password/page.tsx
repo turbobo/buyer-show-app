@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useUIStore } from '@/store/ui'
 import { sendPasswordResetEmail } from '@/services/auth'
+import { smartBack } from '@/lib/nav-helpers'
 
 type PageState = 'idle' | 'sending' | 'sent'
 
@@ -37,7 +38,7 @@ export default function ForgotPasswordPage() {
       <motion.button
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        onClick={() => router.back()}
+        onClick={() => smartBack(router, '/login')}
         className="fixed top-4 left-4 md:top-20 md:left-8 z-30 w-9 h-9 rounded-full bg-white shadow-card flex items-center justify-center"
         aria-label="返回"
       >

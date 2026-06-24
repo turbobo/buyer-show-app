@@ -19,7 +19,7 @@ export default function ProfilePage() {
   } = useProfilePage()
 
   return (
-    <div className="min-h-screen bg-warm-50 pb-28 md:px-8 md:pt-20">
+    <div className="min-h-screen bg-warm-50 pb-28 md:pt-20">
       <ProfileHeader
         authReady={authReady}
         isLoggedIn={isLoggedIn}
@@ -34,7 +34,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="px-5 -mt-3"
+            className="px-5 -mt-3 max-w-xl md:max-w-3xl lg:max-w-5xl mx-auto"
           >
             <ProfileMenu user={user} onMenuClick={handleMenuClick} />
 

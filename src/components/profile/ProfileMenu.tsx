@@ -54,6 +54,16 @@ const MENU_SECTIONS: MenuSection[] = [
         ),
         color: 'from-sky-400 to-blue-400',
       },
+      {
+        label: '我的点赞',
+        href: '/profile/likes',
+        icon: (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+          </svg>
+        ),
+        color: 'from-rose-400 to-pink-400',
+      },
     ],
   },
   {
@@ -178,9 +188,9 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
         variants={sectionVariants}
         initial="hidden"
         animate="visible"
-        className="bg-white rounded-2xl shadow-sm p-5 mb-5"
+        className="bg-white rounded-2xl shadow-sm p-5 md:p-6 mb-4 md:mb-5"
       >
-        <div className="grid grid-cols-3">
+        <div className="grid grid-cols-3 divide-x divide-gray-100">
           {[
             { value: user.post_count, label: '发布' },
             { value: user.follower_count, label: '粉丝' },
@@ -191,14 +201,14 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 + i * 0.08 }}
-              className="flex flex-col items-center justify-center"
+              className="flex flex-col items-center justify-center px-2"
             >
-              <span className="text-xl font-bold text-gray-800 font-num tabular-nums">
+              <span className="text-xl md:text-2xl font-bold text-gray-800 font-num tabular-nums">
                 {stat.value >= 1000
                   ? `${(stat.value / 1000).toFixed(1)}k`
                   : stat.value}
               </span>
-              <span className="text-xs text-gray-400 mt-0.5">{stat.label}</span>
+              <span className="text-xs md:text-sm text-gray-400 mt-1">{stat.label}</span>
             </motion.div>
           ))}
         </div>
@@ -212,23 +222,26 @@ export default function ProfileMenu({ user, onMenuClick }: Props) {
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="mb-3"
+          className="mb-4 md:mb-5"
         >
-          <p className="text-xs text-gray-400 px-1 mb-2">{section.title}</p>
+          <p className="flex items-center gap-2 text-xs md:text-sm font-medium text-gray-500 px-1 mb-2.5">
+            <span className="w-0.5 h-3 rounded-full bg-gradient-to-b from-coral-400 to-coral-200" />
+            {section.title}
+          </p>
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             {section.items.map((item, i) => (
               <motion.button
                 key={item.label}
                 whileTap={{ backgroundColor: '#f9f5f2' }}
                 onClick={() => onMenuClick({ href: item.href, action: item.action, label: item.label })}
-                className={`w-full flex items-center gap-3 px-5 py-3.5 text-left transition-colors ${
+                className={`w-full flex items-center gap-3 md:gap-4 px-5 md:px-6 py-3.5 md:py-4 text-left transition-colors hover:bg-warm-50 ${
                   i < section.items.length - 1 ? 'border-b border-gray-50' : ''
                 }`}
               >
-                <div className={`w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
+                <div className={`w-9 h-9 md:w-10 md:h-10 shrink-0 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white shadow-sm`}>
                   {item.icon}
                 </div>
-                <span className={`flex-1 min-w-0 text-sm font-medium truncate ${
+                <span className={`flex-1 min-w-0 text-sm md:text-base font-medium truncate ${
                   item.danger ? 'text-red-400' : 'text-gray-700'
                 }`}>
                   {item.label}

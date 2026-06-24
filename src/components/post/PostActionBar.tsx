@@ -50,6 +50,11 @@ export default function PostActionBar({
         >
           {isLiked ? '❤️' : '🤍'}
         </motion.span>
+        <span
+          className={`text-sm font-medium ${isLiked ? 'text-coral-500' : 'text-gray-500'}`}
+        >
+          {isLiked ? '已点赞' : '点赞'}
+        </span>
         <motion.span
           key={likeCount}
           initial={{ y: -8, opacity: 0 }}
@@ -82,6 +87,11 @@ export default function PostActionBar({
         >
           <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
         </motion.svg>
+        <span
+          className={`text-sm font-medium ${isFavorited ? 'text-amber-500' : 'text-gray-500'}`}
+        >
+          {isFavorited ? '已收藏' : '收藏'}
+        </span>
         <motion.span
           key={favoriteCount}
           initial={{ y: -8, opacity: 0 }}

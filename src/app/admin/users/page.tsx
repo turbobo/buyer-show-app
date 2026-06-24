@@ -49,7 +49,7 @@ export default function AdminUsersPage() {
         setHasMore(res.hasMore)
       })
       .catch((err: unknown) => {
-        addToast('error', err instanceof Error ? err.message : '加载失败')
+        if (!cancelled) addToast('error', err instanceof Error ? err.message : '加载失败')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)

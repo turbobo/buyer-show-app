@@ -26,25 +26,25 @@
 
 -- 1. 首页 feed / 搜索排序：WHERE status=0 ORDER BY created_at DESC
 --    （最高频查询，必须命中）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_status_created
+CREATE INDEX IF NOT EXISTS idx_posts_status_created
   ON posts (created_at DESC)
   WHERE status = 0;
 
 -- 2. 个人页帖子列表：WHERE user_id=? AND status=0 ORDER BY created_at DESC
 --    （partial 索引只覆盖 status=0，体积最小）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_user_id_active
+CREATE INDEX IF NOT EXISTS idx_posts_user_id_active
   ON posts (user_id, created_at DESC)
   WHERE status = 0;
 
 -- 3. 标签筛选：WHERE tags @> ARRAY['xxx'] AND status=0
 --    （GIN 索引支持数组 contains 操作符）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_tags_active
+CREATE INDEX IF NOT EXISTS idx_posts_tags_active
   ON posts USING GIN (tags)
   WHERE status = 0;
 
 -- 4. 详情页 / 编辑页 generateStaticParams：SELECT id FROM posts WHERE status=0 LIMIT 100
 --    （仅投影 id 走 Index Only Scan，无需回表）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_id_active
+CREATE INDEX IF NOT EXISTS idx_posts_id_active
   ON posts (id)
   WHERE status = 0;
 
@@ -57,11 +57,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_posts_id_active
 -- ─────────────────────────────────────────────
 
 -- 评论列表：WHERE post_id=? ORDER BY created_at ASC
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_comments_post_id_created
+CREATE INDEX IF NOT EXISTS idx_comments_post_id_created
   ON comments (post_id, created_at ASC);
 
 -- 用户最近评论：WHERE user_id=? ORDER BY created_at DESC
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_comments_user_id_created
+CREATE INDEX IF NOT EXISTS idx_comments_user_id_created
   ON comments (user_id, created_at DESC);
 
 -- ─────────────────────────────────────────────
@@ -70,29 +70,29 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_comments_user_id_created
 
 -- 点赞/收藏/关注 唯一性校验：WHERE (post_id/user_id/comment_id)=? AND user_id=?
 --   likes 表：
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_likes_post_user
+CREATE INDEX IF NOT EXISTS idx_likes_post_user
   ON likes (post_id, user_id);
 --   favorites（帖子收藏）：
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_favorites_post_user
+CREATE INDEX IF NOT EXISTS idx_favorites_post_user
   ON favorites (post_id, user_id);
 --   favorite_tags（标签收藏）：
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_favorite_tags_user_tag
+CREATE INDEX IF NOT EXISTS idx_favorite_tags_user_tag
   ON favorite_tags (user_id, tag);
 --   favorite_comments（评论收藏）：
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_favorite_comments_user_comment
+CREATE INDEX IF NOT EXISTS idx_favorite_comments_user_comment
   ON favorite_comments (comment_id, user_id);
 
 -- follows 双向计数：follower_id / following_id
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follows_follower
+CREATE INDEX IF NOT EXISTS idx_follows_follower
   ON follows (follower_id, created_at DESC);
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follows_following
+CREATE INDEX IF NOT EXISTS idx_follows_following
   ON follows (following_id, created_at DESC);
 
 -- ─────────────────────────────────────────────
 -- 四、search_history（搜索页「我的历史」）
 -- ─────────────────────────────────────────────
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_search_history_user_created
+CREATE INDEX IF NOT EXISTS idx_search_history_user_created
   ON search_history (user_id, created_at DESC);
 
 -- ─────────────────────────────────────────────

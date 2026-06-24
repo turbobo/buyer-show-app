@@ -66,8 +66,8 @@ export default function ProfileHeader({ authReady, isLoggedIn, user, onLogin }: 
             <div className="relative">
               <div className="w-[72px] h-[72px] rounded-full border-[3px] border-white/60 overflow-hidden shadow-lg">
                 <img
-                  src={user.avatar_url}
-                  alt={user.nickname}
+                  src={user.avatar_url || ''}
+                  alt={user.nickname || '用户头像'}
                   loading="lazy"
                   className="w-full h-full object-cover"
                 />
@@ -92,7 +92,7 @@ export default function ProfileHeader({ authReady, isLoggedIn, user, onLogin }: 
                   </svg>
                 </motion.button>
               </div>
-              <p className="text-sm text-white/70 mt-0.5">{user.bio}</p>
+              <p className="text-sm text-white/70 mt-0.5">{user.bio || ''}</p>
             </div>
           </motion.div>
         ) : null}

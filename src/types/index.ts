@@ -49,10 +49,16 @@ export interface Comment {
   content: string
   created_at: string
   favorite_count?: number
+  /** 父评论 ID（null 为顶级评论） */
+  parent_id?: string | null
+  /** 回复数量（触发器自动维护） */
+  reply_count?: number
   /** JOIN 字段：评论者信息 */
   user?: Pick<User, 'nickname' | 'avatar_url'>
   /** JOIN 字段：当前用户是否已收藏 */
   is_favorited?: boolean
+  /** 客户端组装：子回复列表 */
+  replies?: Comment[]
 }
 
 /** 收藏标签项（favorite_tags 表） */

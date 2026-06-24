@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
-import { fetchUserComments, fetchUserCommentsGroupedByPost } from '@/services/comment'
+import { fetchUserComments, fetchUserCommentsGroupedByPost, deleteComment } from '@/services/comment'
 import ProfileSubPageLayout, { EmptyState } from '@/components/layout/ProfileSubPageLayout'
 import type { Comment, Post } from '@/types'
 
@@ -40,6 +40,7 @@ export default function MyCommentsPage() {
   const [loading, setLoading] = useState(true)
 
   const addToast = useUIStore((s) => s.addToast)
+  const openModal = useUIStore((s) => s.openModal)
 
   useEffect(() => {
     if (!authReady) return
@@ -65,8 +66,34 @@ export default function MyCommentsPage() {
     return () => { cancelled = true }
   }, [authReady, isLoggedIn, user, router, tab, addToast])
 
+  const handleDelete = (commentId: string) => {
+    openModal({
+      title: '删除评论？',
+      description: '删除后无法恢复。',
+      confirmText: '确认删除',
+      confirmDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteComment(commentId)
+          setComments((prev) => prev.filter((item) => item.id !== commentId))
+          setGrouped((prev) =>
+            prev
+              .map((group) => ({
+                ...group,
+                comments: group.comments.filter((item) => item.id !== commentId),
+              }))
+              .filter((group) => group.comments.length > 0),
+          )
+          addToast('success', '评论已删除')
+        } catch (err: unknown) {
+          addToast('error', err instanceof Error ? err.message : '删除失败')
+        }
+      },
+    })
+  }
+
   const totalCount =
-    tab === 'flat' ? comments.length : grouped.reduce((n, g) => n + g.comments.length, 0)
+    tab === 'flat' ? comments.length : grouped.reduce((num, group) => num + group.comments.length, 0)
 
   return (
     <ProfileSubPageLayout
@@ -77,18 +104,18 @@ export default function MyCommentsPage() {
     >
       {/* Tab Bar */}
       <div className="flex items-center gap-1 mb-5 bg-white rounded-full p-1 shadow-sm w-fit">
-        {TABS.map((t) => (
+        {TABS.map((tabItem) => (
           <motion.button
-            key={t.key}
+            key={tabItem.key}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setTab(t.key)}
+            onClick={() => setTab(tabItem.key)}
             className={`px-5 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              tab === t.key
+              tab === tabItem.key
                 ? 'bg-gradient-to-r from-coral-500 to-coral-400 text-white shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {t.label}
+            {tabItem.label}
           </motion.button>
         ))}
       </div>
@@ -108,44 +135,8 @@ export default function MyCommentsPage() {
           />
         ) : (
           <div className="space-y-3 max-w-2xl">
-            {comments.map((c, i) => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="bg-white rounded-2xl p-4 shadow-sm"
-              >
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
-                  {c.content}
-                </p>
-                <p className="text-xs text-gray-400 mt-2 font-num">{formatTime(c.created_at)}</p>
-
-                {c.post && (
-                  <Link href={`/post/${c.post.id}`}>
-                    <motion.div
-                      whileTap={{ scale: 0.98 }}
-                      className="mt-3 flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 hover:bg-coral-50/40 transition-colors cursor-pointer"
-                    >
-                      {c.post.images?.[0] && (
-                        <img
-                          src={c.post.images[0]}
-                          alt=""
-                          loading="lazy"
-                          className="w-12 h-12 rounded-lg object-cover shrink-0"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-400 mb-0.5">原帖</p>
-                        <p className="text-sm text-gray-700 truncate">{c.post.title}</p>
-                      </div>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    </motion.div>
-                  </Link>
-                )}
-              </motion.div>
+            {comments.map((item, idx) => (
+              <FlatCommentCard key={item.id} comment={item} index={idx} onDelete={handleDelete} />
             ))}
           </div>
         )
@@ -161,52 +152,8 @@ export default function MyCommentsPage() {
         />
       ) : (
         <div className="space-y-4 max-w-2xl">
-          {grouped.map((g, gi) => (
-            <motion.div
-              key={g.post?.id || gi}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: gi * 0.05 }}
-              className="bg-white rounded-2xl p-4 shadow-sm"
-            >
-              {/* 帖子头 */}
-              <Link href={`/post/${g.post?.id || ''}`}>
-                <motion.div
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 hover:bg-coral-50/40 transition-colors cursor-pointer"
-                >
-                  {g.post?.images?.[0] && (
-                    <img
-                      src={g.post.images[0]}
-                      alt=""
-                      loading="lazy"
-                      className="w-12 h-12 rounded-lg object-cover shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-400 mb-0.5">原帖 · {g.comments.length} 条评论</p>
-                    <p className="text-sm text-gray-800 font-medium truncate">{g.post?.title}</p>
-                  </div>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </motion.div>
-              </Link>
-
-              {/* 评论列表 */}
-              <div className="divide-y divide-gray-50 mt-3">
-                {g.comments.map((c) => (
-                  <div key={c.id} className="py-2.5">
-                    <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
-                      {c.content}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1 font-num">
-                      {formatTime(c.created_at)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+          {grouped.map((group, gi) => (
+            <GroupedCommentCard key={group.post?.id || gi} group={group} index={gi} onDelete={handleDelete} />
           ))}
         </div>
       )}
@@ -214,11 +161,139 @@ export default function MyCommentsPage() {
   )
 }
 
+function FlatCommentCard({
+  comment,
+  index,
+  onDelete,
+}: {
+  comment: CommentWithPost
+  index: number
+  onDelete: (id: string) => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="bg-white rounded-2xl p-4 shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm text-gray-700 leading-relaxed line-clamp-3 flex-1">
+          {comment.content}
+        </p>
+        <button
+          onClick={() => onDelete(comment.id)}
+          className="shrink-0 text-gray-300 hover:text-red-500 transition-colors p-1"
+          aria-label="删除评论"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+          </svg>
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mt-2 font-num">{formatTime(comment.created_at)}</p>
+
+      {comment.post && (
+        <Link href={`/post/${comment.post.id}`}>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            className="mt-3 flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 hover:bg-coral-50/40 transition-colors cursor-pointer"
+          >
+            {comment.post.images?.[0] && (
+              <img
+                src={comment.post.images[0]}
+                alt=""
+                loading="lazy"
+                className="w-12 h-12 rounded-lg object-cover shrink-0"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-400 mb-0.5">原帖</p>
+              <p className="text-sm text-gray-700 truncate">{comment.post.title}</p>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </motion.div>
+        </Link>
+      )}
+    </motion.div>
+  )
+}
+
+function GroupedCommentCard({
+  group,
+  index,
+  onDelete,
+}: {
+  group: { post: Pick<Post, 'id' | 'title' | 'images'>; comments: Comment[] }
+  index: number
+  onDelete: (id: string) => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="bg-white rounded-2xl p-4 shadow-sm"
+    >
+      <Link href={`/post/${group.post?.id || ''}`}>
+        <motion.div
+          whileTap={{ scale: 0.98 }}
+          className="flex items-center gap-3 p-2.5 rounded-xl bg-warm-50 hover:bg-coral-50/40 transition-colors cursor-pointer"
+        >
+          {group.post?.images?.[0] && (
+            <img
+              src={group.post.images[0]}
+              alt=""
+              loading="lazy"
+              className="w-12 h-12 rounded-lg object-cover shrink-0"
+            />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400 mb-0.5">原帖 · {group.comments.length} 条评论</p>
+            <p className="text-sm text-gray-800 font-medium truncate">{group.post?.title}</p>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </motion.div>
+      </Link>
+
+      <div className="divide-y divide-gray-50 mt-3">
+        {group.comments.map((item) => (
+          <div key={item.id} className="py-2.5 flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
+                {item.content}
+              </p>
+              <p className="text-xs text-gray-400 mt-1 font-num">
+                {formatTime(item.created_at)}
+              </p>
+            </div>
+            <button
+              onClick={() => onDelete(item.id)}
+              className="shrink-0 text-gray-300 hover:text-red-500 transition-colors p-1 mt-0.5"
+              aria-label="删除评论"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 function CommentSkeleton() {
   return (
     <div className="space-y-3 max-w-2xl">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-2xl p-4 shadow-sm">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <div key={idx} className="bg-white rounded-2xl p-4 shadow-sm">
           <div className="space-y-2">
             <div className="h-3 bg-gray-100 rounded animate-pulse w-full" />
             <div className="h-3 bg-gray-100 rounded animate-pulse w-2/3" />

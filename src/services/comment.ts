@@ -4,7 +4,7 @@ import type { Post, Comment } from '@/types'
 
 // ─── 评论 ───
 
-/** 拉取帖子下所有评论（按时间正序） */
+/** 拉取帖子下所有评论并组装为树结构（顶级 + replies） */
 export async function fetchPostComments(postId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('comments')
@@ -13,22 +13,67 @@ export async function fetchPostComments(postId: string): Promise<Comment[]> {
     .order('created_at', { ascending: true })
 
   if (error) throw new Error(`获取评论失败: ${error.message}`)
-  return (data ?? []) as Comment[]
+
+  const allComments = (data ?? []) as Comment[]
+  const topLevel: Comment[] = []
+  const childMap = new Map<string, Comment[]>()
+
+  for (const comment of allComments) {
+    if (comment.parent_id) {
+      const siblings = childMap.get(comment.parent_id) ?? []
+      siblings.push(comment)
+      childMap.set(comment.parent_id, siblings)
+    } else {
+      topLevel.push(comment)
+    }
+  }
+
+  for (const parent of topLevel) {
+    parent.replies = childMap.get(parent.id) ?? []
+  }
+
+  return topLevel
 }
 
-/** 发表评论 */
-export async function addComment(postId: string, content: string): Promise<Comment> {
+/** 发表评论（支持回复） */
+export async function addComment(
+  postId: string,
+  content: string,
+  parentId?: string,
+): Promise<Comment> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('请先登录')
 
+  const insertData: Record<string, unknown> = {
+    post_id: postId,
+    user_id: user.id,
+    content,
+  }
+  if (parentId) {
+    insertData.parent_id = parentId
+  }
+
   const { data, error } = await supabase
     .from('comments')
-    .insert({ post_id: postId, user_id: user.id, content })
+    .insert(insertData)
     .select('*, user:profiles!comments_user_id_fkey(nickname, avatar_url)')
     .single()
 
   if (error) throw new Error(`评论失败: ${error.message}`)
   return data as Comment
+}
+
+/** 删除评论（RLS 保证只能删除自己的） */
+export async function deleteComment(commentId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('请先登录')
+
+  const { error } = await supabase
+    .from('comments')
+    .delete()
+    .eq('id', commentId)
+
+  if (error) throw new Error(`删除评论失败: ${error.message}`)
 }
 
 /** 获取当前用户发表的评论列表（附带原帖摘要，仅返回 active 帖子） */
@@ -47,10 +92,10 @@ export async function fetchUserComments(userId: string): Promise<Array<Comment &
   if (error) throw new Error(`获取评论失败: ${error.message}`)
 
   return (data ?? [])
-    .filter((c: { post: { status: number } | null }) => c.post && c.post.status === POST_STATUS.ACTIVE)
-    .map((c: Comment & { post: { id: string; title: string; images: string[] } }) => ({
-      ...c,
-      post: { id: c.post.id, title: c.post.title, images: c.post.images },
+    .filter((comment: { post: { status: number } | null }) => comment.post && comment.post.status === POST_STATUS.ACTIVE)
+    .map((comment: Comment & { post: { id: string; title: string; images: string[] } }) => ({
+      ...comment,
+      post: { id: comment.post.id, title: comment.post.title, images: comment.post.images },
     })) as Array<Comment & { post?: Pick<Post, 'id' | 'title' | 'images'> }>
 }
 
@@ -70,19 +115,19 @@ export async function fetchUserCommentsGroupedByPost(userId: string): Promise<
   if (error) throw new Error(`获取评论失败: ${error.message}`)
 
   const map = new Map<string, { post: Pick<Post, 'id' | 'title' | 'images'>; comments: Comment[] }>()
-  for (const c of (comments ?? []) as Comment[]) {
-    const postId = c.post_id
+  for (const comment of (comments ?? []) as Comment[]) {
+    const postId = comment.post_id
     if (!map.has(postId)) {
-      const rawPost = (c as unknown as { post?: Pick<Post, 'id' | 'title' | 'images' | 'user_id' | 'status'> }).post
+      const rawPost = (comment as unknown as { post?: Pick<Post, 'id' | 'title' | 'images' | 'user_id' | 'status'> }).post
       if (!rawPost || rawPost.status !== POST_STATUS.ACTIVE) continue
       map.set(postId, {
         post: { id: rawPost.id, title: rawPost.title, images: rawPost.images },
         comments: [],
       })
-    } else if ((c as unknown as { post?: { status?: number } }).post?.status !== POST_STATUS.ACTIVE) {
+    } else if ((comment as unknown as { post?: { status?: number } }).post?.status !== POST_STATUS.ACTIVE) {
       continue
     }
-    map.get(postId)!.comments.push(c)
+    map.get(postId)!.comments.push(comment)
   }
   return Array.from(map.values())
 }

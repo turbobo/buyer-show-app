@@ -26,10 +26,15 @@ export default function PostDetailClient() {
     submittingComment,
     carouselRef,
     guard,
+    currentUser,
+    replyTarget,
     handleCarouselScroll,
     handleToggleLike,
     handleToggleFavorite,
     handleSubmitComment,
+    handleDeleteComment,
+    handleReply,
+    handleCancelReply,
   } = usePostDetail()
 
   if (loading) {
@@ -106,7 +111,19 @@ export default function PostDetailClient() {
               guard={guard}
             />
 
-            <CommentSection comments={comments} />
+            <CommentSection
+              comments={comments}
+              currentUserId={currentUser?.id}
+              onDelete={handleDeleteComment}
+              onReply={handleReply}
+              commentText={commentText}
+              setCommentText={setCommentText}
+              submittingComment={submittingComment}
+              handleSubmitComment={handleSubmitComment}
+              guard={guard}
+              replyTarget={replyTarget}
+              onCancelReply={handleCancelReply}
+            />
           </div>
         </div>
 
@@ -116,6 +133,8 @@ export default function PostDetailClient() {
           submittingComment={submittingComment}
           handleSubmitComment={handleSubmitComment}
           guard={guard}
+          replyTarget={replyTarget}
+          onCancelReply={handleCancelReply}
         />
       </div>
     </>

@@ -7,16 +7,23 @@ import {
   checkPostLiked,
   checkPostFavorited,
 } from '@/services/post'
-import { addComment as addCommentApi } from '@/services/comment'
+import { addComment as addCommentApi, deleteComment as deleteCommentApi } from '@/services/comment'
 import { useAuthGuard } from '@/hooks/useAuthGuard'
+import { useUserStore } from '@/store/user'
 import { useUIStore } from '@/store/ui'
 import type { Post, Comment } from '@/types'
+
+export interface ReplyTarget {
+  commentId: string
+  nickname: string
+}
 
 export function usePostDetail() {
   const params = useParams()
   const router = useRouter()
   const postId = params.id as string
   const { guard } = useAuthGuard()
+  const currentUser = useUserStore((s) => s.user)
   const addToast = useUIStore((s) => s.addToast)
 
   const [post, setPost] = useState<Post | null>(null)
@@ -30,6 +37,7 @@ export function usePostDetail() {
   const [comments, setComments] = useState<Comment[]>([])
   const [commentText, setCommentText] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
+  const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null)
 
   const carouselRef = useRef<HTMLDivElement>(null)
 
@@ -107,9 +115,26 @@ export function usePostDetail() {
 
     setSubmittingComment(true)
     try {
-      const newComment = await addCommentApi(postId, text)
-      setComments((prev) => [...prev, newComment])
+      const parentId = replyTarget?.commentId
+      const newComment = await addCommentApi(postId, text, parentId)
+      if (parentId) {
+        setComments((prev) =>
+          prev.map((topComment) => {
+            if (topComment.id === parentId) {
+              return {
+                ...topComment,
+                replies: [...(topComment.replies ?? []), newComment],
+                reply_count: (topComment.reply_count ?? 0) + 1,
+              }
+            }
+            return topComment
+          }),
+        )
+      } else {
+        setComments((prev) => [...prev, { ...newComment, replies: [] }])
+      }
       setCommentText('')
+      setReplyTarget(null)
       if (post) {
         setPost({ ...post, comment_count: post.comment_count + 1 })
       }
@@ -120,6 +145,61 @@ export function usePostDetail() {
       setSubmittingComment(false)
     }
   }
+
+  const handleDeleteComment = async (commentId: string) => {
+    useUIStore.getState().openModal({
+      title: '删除评论？',
+      description: '删除后无法恢复。',
+      confirmText: '确认删除',
+      confirmDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteCommentApi(commentId)
+          let deletedCount = 1
+          setComments((prev) => {
+            const filtered: Comment[] = []
+            for (const topComment of prev) {
+              if (topComment.id === commentId) {
+                deletedCount += topComment.replies?.length ?? 0
+                continue
+              }
+              const filteredReplies = (topComment.replies ?? []).filter(
+                (reply) => reply.id !== commentId,
+              )
+              if (filteredReplies.length < (topComment.replies?.length ?? 0)) {
+                filtered.push({
+                  ...topComment,
+                  replies: filteredReplies,
+                  reply_count: filteredReplies.length,
+                })
+              } else {
+                filtered.push(topComment)
+              }
+            }
+            return filtered
+          })
+          if (post) {
+            setPost({ ...post, comment_count: Math.max(0, post.comment_count - deletedCount) })
+          }
+          addToast('success', '评论已删除')
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : '删除失败'
+          addToast('error', msg)
+        }
+      },
+    })
+  }
+
+  const handleReply = useCallback((comment: Comment) => {
+    setReplyTarget({
+      commentId: comment.parent_id ?? comment.id,
+      nickname: comment.user?.nickname ?? '匿名',
+    })
+  }, [])
+
+  const handleCancelReply = useCallback(() => {
+    setReplyTarget(null)
+  }, [])
 
   return {
     post,
@@ -137,9 +217,14 @@ export function usePostDetail() {
     submittingComment,
     carouselRef,
     guard,
+    currentUser,
+    replyTarget,
     handleCarouselScroll,
     handleToggleLike,
     handleToggleFavorite,
     handleSubmitComment,
+    handleDeleteComment,
+    handleReply,
+    handleCancelReply,
   }
 }

@@ -5,7 +5,7 @@
 --
 -- 审计结论（盘点 migration.sql + v1-v9 全部 CREATE INDEX / UNIQUE 约束）：
 --
---   【P0 严重】v9 的 4 个 CREATE INDEX CONCURRENTLY IF NOT EXISTS 被 v1 的单列
+--   【P0 严重】v9 的 4 个 CREATE INDEX IF NOT EXISTS 被 v1 的单列
 --              同名索引静默跳过，导致实际库里的索引还是 v1 版本（无法用于 ORDER BY
 --              created_at DESC）：
 --              - idx_follows_follower     v1:(follower_id)                 v9:(follower_id, created_at DESC)
@@ -44,14 +44,14 @@ DROP INDEX IF EXISTS public.idx_search_history_user_created;
 DROP INDEX IF EXISTS public.idx_search_history_user;
 
 -- 1.3 重建正确的复合索引（follower/following + created_at DESC，命中 fetchFollowers/fetchFollowing）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follows_follower
+CREATE INDEX IF NOT EXISTS idx_follows_follower
   ON follows (follower_id, created_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follows_following
+CREATE INDEX IF NOT EXISTS idx_follows_following
   ON follows (following_id, created_at DESC);
 
 -- 1.4 重建 search_history 的复合索引（user_id + created_at DESC）
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_search_history_user_created
+CREATE INDEX IF NOT EXISTS idx_search_history_user_created
   ON search_history (user_id, created_at DESC);
 
 -- ─────────────────────────────────────────────
@@ -81,7 +81,7 @@ DROP INDEX IF EXISTS public.idx_favorite_tags_user;
 -- 3.1 profiles.nickname btree 索引：
 --     services/user.ts#isNicknameAvailable 用 `.eq('nickname', trimmed)` 精确匹配
 --     v3 的 LOWER(nickname) 函数索引只能命中 case-insensitive 查询，等值用不上
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_nickname
+CREATE INDEX IF NOT EXISTS idx_profiles_nickname
   ON profiles (nickname);
 
 -- ─────────────────────────────────────────────

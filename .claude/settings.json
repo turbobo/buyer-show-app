@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "command": "git diff --quiet && git diff --cached --quiet || (git add -u && git commit -m \"auto: Claude Code changes\")",
+        "timeout": 10000
+      }
+    ]
+  }
+}

@@ -52,8 +52,8 @@ export default function MyCommentsPage() {
     let cancelled = false
     const fetchPromise =
       tab === 'flat'
-        ? fetchUserComments(user.id).then(setComments)
-        : fetchUserCommentsGroupedByPost(user.id).then(setGrouped)
+        ? fetchUserComments(user.id).then((data) => { if (!cancelled) setComments(data) })
+        : fetchUserCommentsGroupedByPost(user.id).then((data) => { if (!cancelled) setGrouped(data) })
 
     fetchPromise
       .catch((err: unknown) => {

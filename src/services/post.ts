@@ -5,34 +5,71 @@ import type { Post, Comment, PaginatedResponse, CreatePostParams } from '@/types
 
 const PAGE_SIZE = 20
 
+interface FeedRow {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  images: string[]
+  tags: string[]
+  product_name: string
+  price: string
+  rating: number
+  like_count: number
+  comment_count: number
+  favorite_count: number
+  status: number
+  created_at: string
+  updated_at: string
+  user_nickname: string
+  user_avatar_url: string
+}
+
+function mapFeedRowToPost(row: FeedRow): Post {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    content: row.content,
+    images: row.images,
+    tags: row.tags,
+    product_name: row.product_name,
+    price: row.price,
+    rating: row.rating,
+    like_count: row.like_count,
+    comment_count: row.comment_count,
+    favorite_count: row.favorite_count,
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    user: {
+      nickname: row.user_nickname,
+      avatar_url: row.user_avatar_url,
+    },
+  }
+}
+
 // ─── 帖子 ───
 
-/** 获取帖子列表（分页 + 标签筛选） */
+/** 获取帖子列表（分页 + 标签筛选），走 RPC 绕过 RLS 提速 */
 export async function fetchPosts(
   page: number,
   tag?: string,
 ): Promise<PaginatedResponse<Post>> {
-  let query = supabase
-    .from('posts')
-    .select('*, user:profiles!posts_user_id_fkey(nickname, avatar_url)')
-    .eq('status', POST_STATUS.ACTIVE)
-    .order('created_at', { ascending: false })
-    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-  if (tag) {
-    query = query.contains('tags', [tag])
-  }
-
-  const { data, error } = await query
+  const { data, error } = await supabase.rpc('fetch_feed_posts', {
+    p_limit: PAGE_SIZE + 1,
+    p_offset: (page - 1) * PAGE_SIZE,
+    p_tag: tag ?? null,
+  })
 
   if (error) throw new Error(`获取帖子失败: ${error.message}`)
 
-  const rows = (data ?? []) as Post[]
+  const rows = (data ?? []) as FeedRow[]
   const hasMore = rows.length > PAGE_SIZE
-  const list = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+  const slice = hasMore ? rows.slice(0, PAGE_SIZE) : rows
 
   return {
-    list,
+    list: slice.map(mapFeedRowToPost),
     total: 0,
     hasMore,
     page,
